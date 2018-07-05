@@ -13,4 +13,4 @@ github_username:  treeinrandomforest
 
 # Build settings
 markdown: kramdown
-remote_theme: zxixia/jekyll-xixia
+theme: Cayman
