@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Your awesome title</title>
+    <title>The Happy Mathematician</title>
     <description>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.
 </description>
-    <link>http://yourdomain.com/</link>
-    <atom:link href="http://yourdomain.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 05 Jul 2018 13:00:52 -0400</pubDate>
-    <lastBuildDate>Thu, 05 Jul 2018 13:00:52 -0400</lastBuildDate>
+    <link>http://treeinrandomforest.github.io/</link>
+    <atom:link href="http://treeinrandomforest.github.io/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Thu, 05 Jul 2018 13:09:45 -0400</pubDate>
+    <lastBuildDate>Thu, 05 Jul 2018 13:09:45 -0400</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
     
       <item>
@@ -28,8 +28,8 @@
 
 </description>
         <pubDate>Thu, 05 Jul 2018 12:54:38 -0400</pubDate>
-        <link>http://yourdomain.com/jekyll/update/2018/07/05/welcome-to-jekyll.html</link>
-        <guid isPermaLink="true">http://yourdomain.com/jekyll/update/2018/07/05/welcome-to-jekyll.html</guid>
+        <link>http://treeinrandomforest.github.io/jekyll/update/2018/07/05/welcome-to-jekyll.html</link>
+        <guid isPermaLink="true">http://treeinrandomforest.github.io/jekyll/update/2018/07/05/welcome-to-jekyll.html</guid>
         
         
         <category>jekyll</category>
@@ -234,8 +234,8 @@ g(\bar{y}) &amp;= \frac{1}{2\pi} \int dk\, e^{ik\bar{y}}e^{-ik\mu}e^{-\frac{\sig
 &lt;p&gt;is exactly a Gaussian p.d.f. with mean = &lt;script type=&quot;math/tex&quot;&gt;\mu&lt;/script&gt; and standard deviation = &lt;script type=&quot;math/tex&quot;&gt;\frac{\sigma}{\sqrt{n}}&lt;/script&gt;.&lt;/p&gt;
 </description>
         <pubDate>Mon, 18 Jun 2018 16:59:43 -0400</pubDate>
-        <link>http://yourdomain.com/jekyll/update/2018/06/18/central-limit-theory.html</link>
-        <guid isPermaLink="true">http://yourdomain.com/jekyll/update/2018/06/18/central-limit-theory.html</guid>
+        <link>http://treeinrandomforest.github.io/jekyll/update/2018/06/18/central-limit-theory.html</link>
+        <guid isPermaLink="true">http://treeinrandomforest.github.io/jekyll/update/2018/06/18/central-limit-theory.html</guid>
         
         
         <category>jekyll</category>
