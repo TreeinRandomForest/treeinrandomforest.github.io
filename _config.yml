@@ -13,4 +13,4 @@ github_username:  treeinrandomforest
 
 # Build settings
 markdown: kramdown
-theme: Cayman
+theme: jekyll-theme-cayman
