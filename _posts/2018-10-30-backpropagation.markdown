@@ -646,10 +646,177 @@ Technically, $\frac{\delta C}{\delta A} = A (xx^T) (xx^T)$ also works. But if we
 
 Let's see if we can convince ourselves by doing an explicit calculation. We'll happly use our new index notation to cut through the calculation:
 
-$C = \frac{1}{2} x^TA^TAx = \frac{1}{2} x_i (A^T)\_{ij} (A)\_{jk} x_k = x_i a_{ji} a_{jk} x_k$
+$C = \frac{1}{2} x^TA^TAx = \frac{1}{2} x_i (A^T)\_{ij} (A)\_{jk} x_k = \frac{1}{2} x_i a_{ji} a_{jk} x_k$
 
 where as before repeated indices mean an implicit sum. Now, using the chain rule:
 
 $\frac{\partial C}{\partial a_{cd}} = \frac{1}{2} [x_i \frac{\partial a_{ji}}{\partial a_{cd}} a_{jk} x_k + x_i a_{ji} \frac{\partial a_{jk}}{\partial a_{cd}} x_k]$
 
-$\frac{\partial C}{\partial a_{cd}} = \frac{1}{2} [x_i \delta_{j,c}\delta_{i,d} a_{jk} x_k + x_i a_{ij} \delta_{j,c}\delta_{k,d} x_k] = \frac{1}{2} [x_d a_{ck} x_k + x_i a_{ic}x_d]$
+$\frac{\partial C}{\partial a_{cd}} = \frac{1}{2} [x_i \delta_{j,c}\delta_{i,d} a_{jk} x_k + x_i a_{ji} \delta_{j,c}\delta_{k,d} x_k] = \frac{1}{2} [x_d a_{ck} x_k + x_i a_{ci}x_d]$
+
+These two terms are exactly the same:
+
+$x_d a_{ck} x_k = x_d (Ax)\_{c}$
+
+$x_i a_{ci} x_d = x_d a_{ci} x_i = x_d (Ax)\_{c}$
+
+and add up to kill the factor of $\frac{1}{2}$.
+
+So,
+
+$\frac{\partial C}{\partial a_{cd}} = (Ax)\_{c} x_d = (Axx^T)\_{cd}$
+
+In other words, we just showed that:
+
+$\frac{\delta C}{\delta A} = Ax x^T$.
+
+We still have one more calculation to do that will be crucial for doing back-propagation on our multi-node neural network.
+
+Now,
+
+$C = \frac{1}{2} x^T B^T A^T A B x$
+
+Calculating $\frac{\delta C}{\delta A}$ is easy given what we just calculated and we just need to replace $x \rightarrow B x$. So,
+
+$\frac{\delta C}{\delta A} = (ABx) (Bx)^T = (ABx)x^TB^T$
+
+But what about $\frac{\delta C}{\delta B}$? If we define $D = A^T A$ then we have
+
+$C = \frac{1}{2} x^T B^T D B x$
+
+Again we'll guess our solution base on dimensions and then explicitly compute it.
+
+We are given the sizes:
+
+$dim(x) = (n,1) \implies dim(x^T) = (1,n)$
+
+$dim(B) = (m, n) \implies dim(B^T) = (n, m)$
+
+$dim(A) = (l, m) \implies dim(A^T) = (m,l)$
+
+We also expect $dim(\frac{\delta C}{\delta B}) = dim(B) = (m,n)$. As before, the derivative should be linear in $B$, quadratic in $A$ and $x$ since they are for all practical purposes, constants for us.
+
+So, let's see what modular pieces we have to work with:
+
+Quadratic in $x$:
+
+$dim(x^Tx) = (1,1)$
+
+$dim(xx^T) = (n,n)$
+
+Quadratic in $A$:
+
+$dim(A A^T) = (l,l)$
+
+$dim(A^T A) = (m,m)$
+
+Linear in $B$:
+
+$dim(B) = (m,n)$
+
+So we can multiply $B$ on the right by something that is $(1,1)$ i.e. $x^Tx$ or $(n,n)$ i.e. $xx^T$ and on the left by something that is $(m,m)$ i.e. $A^TA$.
+
+Guess is:
+
+$\frac{\delta C}{\delta B} = (A^T A) B \begin{cases} 
+xx^T \\\
+x^Tx \\\
+\end{cases}$
+
+We also know that if we replace $D = A^T A$ by the $(m,m)$ identity matrix, we recover our previous example $C = \frac{1}{2} x^T B^T B x$ which gave us $\frac{\delta C}{\delta B} = B (xx^T)$ so we know $xx^T$ is the wrong choice to make.
+
+So, to summarize, if 
+
+$C = \frac{1}{2} x^T B^T A^T A B x$
+
+then 
+
+$\frac{\delta C}{\delta A} = (ABx) (Bx)^T = (ABx)x^TB^T$
+
+and 
+
+$\frac{\delta C}{\delta B} = (A^T A) B (xx^T)$
+
+Of course, let's prove this by doing the explicit calculation using our powerful index notation:
+
+We defined $D = A^TA$ which is a symmetric matrix i.e. $D^T = (A^TA)^T = A^T A = D$ or in terms of elements of $D$, $d_{ij} = d_{ji}$.
+
+$C = \frac{1}{2} x^T B^T D B x = \frac{1}{2} x_i (B^T)\_{ij} (D)\_{jk} (B)\_{kl} x_l = \frac{1}{2} x_i b_{ji} d_{jk} b_{kl} x_l$
+
+Then,
+
+$[\frac{\delta C}{\delta B}]\_{cd} = \frac{1}{2} [x_i \frac{\partial b_{ji}}{\partial b_{cd}} d_{jk} b_{kl} x_l + x_i b_{ji} d_{jk} \frac{\partial b_{kl}}{\partial b_{cd}} x_l]$
+
+We now the derivatives above can only be $1$ when the indices match and otherwise they are $0$:
+
+$\frac{\partial b_{kl}}{\partial b_{cd}} = \delta_{k,c} \delta_{l,d}$
+
+So,
+
+$[\frac{\delta C}{\delta B}]\_{cd} = \frac{1}{2} [x_i \delta_{j,c}\delta_{i,d} d_{jk} b_{kl} x_l + x_i b_{ji} d_{jk} \delta_{k,c}\delta_{l,d} x_l]$
+
+All repeated indices are summed over and the $\delta$s pick out the correct index. As an example:
+
+$\delta_{a,b} x_b = \Sigma_{b=0}^{n} \delta_{a,b} x_b = \underbrace{\Sigma_{b\neq a} \underbrace{\delta_{a,b}}\_{= 0} x_b + \underbrace{\delta_{a,a}}\_{= 1} x_a}\_{\text{Separating terms where the index is a and not a}} = x_a$
+
+In other words if you see something like
+
+$\delta{a,b} x_b$
+
+read it as "wherever you see a $b$, replace it with an $a$ and remove the deltas"
+
+and if you see 
+
+$\delta(a,b)\delta(c,d) x_b y_d$
+
+read it as "wherever you see a $b$, replace it with $a and wherever you see $d$, replace it with $c$ and remove the deltas".
+
+Using this, we get
+
+$[\frac{\delta C}{\delta B}]\_{cd} = \frac{1}{2} [x_d d_{ck} b_{kl} x_l + x_i b_{ji} d_{jc} x_d]$
+
+These are basically the same terms:
+
+$[\frac{\delta C}{\delta B}]\_{cd} = \frac{1}{2} x_d [d_{ck} b_{kl} x_l + d_{jc} b_{ji} x_i]$
+
+where we have just rearranged the factors in the second term and factored out $x_d$. Recall that $D$ was symmetric, i.e. $d_{jc} = d_{cj}$. Then we get
+
+$[\frac{\delta C}{\delta B}]\_{cd} = \frac{1}{2} x_d [d_{ck} b_{kl} x_l + d_{cj} b_{ji} x_i]$
+
+So the two terms are exactly the same since the only non-repeated index is $c$. In other words
+
+$[\frac{\delta C}{\delta B}]\_{cd} = x_d d_{ck} b_{kl} x_l = (DBx)\_{c}x_d = (DBxx^T)\_{cd}$
+
+confirming our suspicion that:
+
+$\frac{\delta C}{\delta B}] = (DBxx^T) = (A^TA)B(xx^T)$
+
+That's it! I promise that's the end of index manipulation exercises. We'll now collect all our results and use them to show that we still get backward chains as before.
+
+$C = y^TAx$:
+
+$\frac{\delta C}{\delta A} = yx^T$
+
+$C = y^TABx$:
+
+$\frac{\delta C}{\delta A} = yx^TB^T$
+
+$\frac{\delta C}{\delta B} = A^Tyx^T$
+
+$C = \frac{1}{2} x^TA^TAx$:
+
+$\frac{\delta C}{\delta A} = A(xx^T)$
+
+$C = \frac{1}{2} x^TB^TA^TABx$:
+
+$\frac{\delta C}{\delta A} = AB(xx^T)B^T$
+
+$\frac{\delta C}{\delta B} = (A^TA) B (xx^T)$
+
+Testing collapsible markdown
+
+<details>
+	<summary>Expand</summary>
+	
+	Stuff goes here
+	</details>
