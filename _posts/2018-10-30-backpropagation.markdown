@@ -314,4 +314,342 @@ As before, we get the same pattern:
 
 $\frac{\partial C}{\partial w_{i,i+1}} = \delta_{2-i} q_i$
 
+which is gratifying. 
+
 ## Backpropagation III - linear activations + multi-node layers
+
+In practice, neural networks with one node per layer are not very helpful. What we really want is to put multiple nodes at each layer to get the classic feedforward neural network shown below. For now, as in Section I, we don't include non-linear activations.
+
+SOME EXPLANATION OF MATRIX MULTIPLICATION
+
+Forward propagation in this architecture is:
+
+$x_1 = W_{01} x_0$
+
+$x_2 = W_{12} x_1$
+
+$x_3 = W_{23} x_2$
+
+where the $W_{ij}$ are matrices of weights! We used $w_{ij}$ to refer to an individual weight in sections I and II and we'll use $W_{ij}$ to refer to the **weight matrix** that takes us from layer $i$ to layer $j$.
+
+We can combine these equations to write:
+
+$x_3 = W_{23}W_{12}W_{01}x_0$
+
+As in section I, there's still the same silliness going on. Why not define $W_c = W_{23}W_{12}W_{01}$ which is just another matrix and do gradient descent on the elements of $W_c$ directly. As before though, we intend on introducing non-linear activations eventually.
+
+In principle, we haven't done anything radically new. We just need to compute a cost and then find the derivatives with respect to each individual weight. Recall that 
+
+(NEED TO introduce the idea of vector-valued outputs and notation for transpose)
+
+$C[W_{01}, W_{12}, W_{23}] = \frac{(x_3-y)^T(x_3-y)}{2}$
+
+where $x_3$ is a vector of $N$ outputs obtained by forward propagation the input $x_0$ and $y$ are the $N$ targets/labels.
+
+INTRODUCE MATRIX DERIVATIVES
+
+$\frac{\delta C}{\delta W_{ij}} \equiv 
+\begin{bmatrix} 
+ \frac{\partial C}{\partial w^{(ij)}\_{11}} & \frac{\partial C}{\partial w^{(ij)}\_{12}} & \ldots \frac{\partial C}{\partial w^{(ij)}\_{1m}} \\\
+ \frac{\partial C}{\partial w^{(ij)}\_{21}} & \frac{\partial C}{\partial w^{(ij)}\_{22}} & \ldots \frac{\partial C}{\partial w^{(ij)}\_{2m}} \\\
+ \vdots & & \\\
+ \frac{\partial C}{\partial w^{(ij)}\_{n1}} & \frac{\partial C}{\partial w^{(ij)}\_{n2}} & \ldots \frac{\partial C}{\partial w^{(ij)}\_{nm}}
+\end{bmatrix}$ 
+
+$C[W] = \frac{(x_3-y)^T(x_3-y)}{2} = \frac{1}{2}\[x_3^Tx_3 - x_3^Ty - y^Tx_3 + y^Ty\]$
+
+The only term that doesn't depend on the weights matrices is $y^Ty$ and is a constant once the dataset is fixed (i.e. the labels are fixed). So we can neglect this term from here on since it'll never contribute to our derivatives.
+
+Also, $x_3^Ty = y^Tx_3$ since they are both just dot products between the same vectors. More explicitly, if $x_3 = (a_1 a_2 \ldots a_n)$ and $y = (b_1 b_2 \ldots b_n)$, then
+
+$x_3^Ty = [a_1 a_2 \ldots a_n]
+\begin{bmatrix}
+b_1 \\\
+b_2 \\\
+\vdots \\\
+b_n
+\end{bmatrix}
+= a_1 b_1 + a_2 b_2 + \ldots a_n b_n$
+
+and 
+
+$y^T x_3 = [b_1 b_2 \ldots b_n]
+\begin{bmatrix}
+a_1 \\\
+a_2 \\\
+\vdots \\\
+a_n
+\end{bmatrix}
+= b_1 a_1 + b_2 a_2 + \ldots b_n a_n$
+
+The two values are the same.
+
+So, we can rewrite the cost 
+
+$$C[W] = \frac{1}{2}[x_3^Tx_3 - 2 y^Tx_3] = \frac{x_3^Ty}{2} - y^Tx_3$$
+
+Two observations:
+* "$=$" is being misused here since we completely dropped the term $y^Ty$ BUT since we are only using $C$ to find the derivatives for gradient descent and the dropped term doesn't contribute, it doesn't matter. If it makes more comfortable, you could define a new cost $C' = C - y^Ty$ and since minimizing a function $f$ is equivalent to minimizing $f + \text{constant}$, minimizing $C'$ and $C$ is equivalent in the sense that they will result in the same set of minimizing weights.
+* We combined $x_3^Ty$ and $y^T x_3$ since they are equal (hence the factor of 2).
+
+Good progress! We are no minimizing (\REF to above cost). Now, we can compute the derivative with respect to every matrix element of every matrix $W_{ij}$ and do gradient descent on each one:
+
+$w_{ab}^{(ij), t+1} = w_{ab}^{(ij), t} - \eta \frac{\partial C}{\partial w_{ab}^{(ij), t+1}}$
+
+Some notes on notation. In $w_{ab}^{(ij), t+1}$, the $t$ refers to the step in gradient descent, $(ij)$ refers to the matrix $W_{ij}$ that the weight comes from and $ab$ refers to the matrix element, i.e. row $a$ and column $b$. This horrible tragedy of notational burden is 1) very annoying, 2) absolutely devoid of any insight. Sure we can compute this mess and maybe even elegantly but unlike sections I and II, there seem to be no nice backward chains here. To prepare a nice meal, one has to sometimes do a lot of "prep" i.e. preparation of ingredients and "pre-processing" them. Using mathematics to understand and gain insights is no different. So we'll take a nice de-tour to introduce the idea of **matrix derivatives**.
+
+### Aside: Matrix derivatives or "I don't like a million indices"
+
+#### Cost linear in weights
+
+Let's start with a simple cost function:
+
+$C[A] = y^TAx$
+
+where $x, y$ are vectors and $A$ is a matrix. More precisely,
+
+$x: (n, 1)$
+
+$A: (m, n)$
+
+$y: (m, 1)$
+
+where we define the dimensions of each object.
+
+$x: (n,1)$ means $x$ has $n$ rows and 1 column.
+
+$A: (m,n)$ means $A$ has m rows and n columns.
+
+$y: (m,1)$ means $y$ has m rows and 1 column or $y^T: (1,m)$ i.e. $y^T$ has 1 row and m columns as one would expect from transposing it.
+
+Why is all this important? Because the product $O_1O_2$ is only defined when
+
+$\text{number of columns of } O_1 = \text{number of rows of } O_2$
+
+and the dimensions of $O_1O_2$ will be:
+
+$(\text{number of rows of }O_1, \text{number of columns of }O_2)$
+
+A more concise way of writing this is:
+
+$O_1: (n_1, k)$
+$O_2: (k, m_2)$
+
+$O_1O_2: (n_1, m_2)$
+
+For our case,
+
+$C[A] = \underbrace{y^T}\_{(1,m)}\underbrace{A}\_{(m,n)}\underbrace{x}\_{(n,1)}$
+
+and $C[A]: (1,1)$ i.e. it's just a number which is what we expected to get for the cost.
+
+Our notation for the cost:
+
+$C[A]$ 
+
+betrays our intention to keep $x, y$ fixed and minimize $C$ as a function of the elements of $A$. We'll still use gradient descent which requires that we compute the derivatives of $C$ with respect to the elements of $A$.
+
+$A = \begin{bmatrix}
+	a_{11} & a_{12} & \ldots & a_{1n} \\\
+	a_{21} & a_{22} & \ldots & a_{2n} \\\
+	\vdots \\\
+	a_{m1} & a_{m2} & \ldots & a_{mn} \\\
+\end{bmatrix}$
+
+Once we have the derivatives:
+
+$\frac{\partial C}{\partial a_{ij}}$
+
+we can update the elements of $A$:
+
+$a_{ij}^{t+1} = a_{ij}^{t} - \eta \frac{\partial C}{\partial a_{ij}^{t}}$
+
+Instead let's try and combine the derivatives in a matrix:
+
+$\frac{\delta C}{\delta A} \equiv \begin{bmatrix}
+	\frac{\partial C}{\partial a_{11}} & \frac{\partial C}{\partial a_{12}} & \ldots & \frac{\partial C}{a_{1n}} \\\
+	\frac{\partial C}{\partial a_{21}} & \frac{\partial C}{\partial a_{22}} & \ldots & \frac{\partial C}{a_{2n}} \\\
+	\vdots \\\
+	\frac{\partial C}{\partial a_{m1}} & \frac{\partial C}{\partial a_{m2}} & \ldots & \frac{\partial C}{a_{mn}} \\\
+\end{bmatrix}$
+
+We can then write:
+
+$A^{t+1} = A^{t} - \eta \frac{\delta C}{\delta A^t}$
+
+i.e. update the whole matrix in one go!
+
+For \REF above to be define, we require $dim(A) = dim(\frac{\delta C}{\delta A}) = (m,n)$.
+
+We also know that $C$ is linear in the elements of $A$ (more below) and so the derivatives should not depend on $A$ - just like the derivative of $f(x) = ax + b$ with respect to x, $\frac{df}{dx} = a$ doesn't depend on $x$. So, $\frac{\delta C}{\delta A}$ can only depend on $x,y$ and the only way to construct a matrix of dimension $(m,n)$ from $x$ and $y$ is 
+
+$\underbrace{y}\_{(m,1)}\underbrace{x^T}\_{(1,n)} = \begin{bmatrix}
+y_1 \\\
+y_2 \\\
+\vdots \\\
+y_m
+\end{bmatrix}
+\begin{bmatrix}
+x_1 & x_2 & \ldots & x_n \\\
+\end{bmatrix} = \begin{bmatrix}
+y_1 x_1 & y_1 x_2 & \ldots y_1 x_n \\\
+y_2 x_1 & y_2 x_2 & \ldots y_2 x_n \\\
+\vdots \\\
+y_m x_1 & y_m x_2 & \ldots y_md x_n \\\
+\end{bmatrix}$
+
+Maybe all this is just too general and hand-wavy. After all, couldn't we multiply $yx^T$ by a constant and still get something with dimension $(m,n)$. That's true! So, let's compute the derivative matrix explicitly to convince ourselves.
+
+$C[A] = \begin{bmatrix}
+	y_1 & y_2 & \ldots & y_m \\\
+\end{bmatrix}
+\begin{bmatrix}
+	a_{11} & a_{12} & \ldots & a_{1n} \\\
+	a_{21} & a_{22} & \ldots & a_{2n} \\\
+	\vdots \\\
+	a_{m1} & a_{m2} & \ldots & a_{mn} \\\
+\end{bmatrix}
+\begin{bmatrix}
+	x_1 \\\
+	x_2 \\\
+	\vdots \\\
+	x_n
+\end{bmatrix}$
+
+$C[A] = \begin{bmatrix}
+	y_1 & y_2 & \ldots & y_m \\\
+\end{bmatrix}
+\begin{bmatrix}
+	a_{11} x_1 + a_{12} x_2 + \ldots + a_{1n} x_n \\\
+	a_{21} x_1 + a_{22} x_2 + \ldots + a_{2n} x_n \\\
+	\ldots \\\
+	a_{m1} x_1 + a_{m2} x_2 + \ldots + a_{mn} x_n \\\
+\end{bmatrix} \\\ = y_1 a_{11} x_1 + y_1 a_{12} x_2 + \ldots y_1 a_{1n} x_n + \\\ \space\space y_2 a_{21} x_1 + y_2 a_{22} x_2 + \ldots y_2 a_{2n} x_n + \\\ \space\space y_m a_{m1} x_1 + y_m a_{m2} x_2 + \ldots y_m a_{mn} x_n$
+
+If we look closely at the last line, all the terms are of the form $y_i a_{ij} x_j$ (which is exactly how one writes matrix multiplication). So, we could write this as:
+
+$C[A] = \Sigma_{i=1}^{m}\Sigma_{j=1}^{n} y_i a_{ij} x_j$
+
+We also introduce the so-called Einstein (yes, the same Einstein you are thinking about) notation here now. We drop the summation sign, $\Sigma$ and write:
+
+$C[A] = y_i a_{ij} x_j$
+
+with the convention that any index that repeats twice is to be summed over. Since i appears twice - once with $y$ and once in $a_{ij}$ and j appears twice - once with $a_{ij}$ and once with $x_j$, they both get summed over the appropriate range. This way we don't have to write the summation sign each way.
+
+To be clear, $y_i a_{ij} x_j$ is the same as $\Sigma_{i=1}^{m}\Sigma_{j=1}^{n} y_i a_{ij} x_j$ using the Einstein notation. Also, it doesn't matter what we call the repeated index so:
+
+$y_i a_{ij} x_j = y_{bob} a_{bob,nancy} x_{nancy}$
+
+It doesn't matter at all what we can the indices.
+
+Great! so we computed an explicit form of $C$ and now we want derivatives with respect to $a_{kl}$ where $k,l$ are just indices denoting row k and column l. 
+
+$\frac{\partial C}{\partial a_{kl}} = \frac{\partial}{\partial a_{kl}} [y_i a_{ij} x_j]$
+
+Some more notation. We define:
+
+$\delta_{a,b} = \begin{cases}
+1, \text{if } a=b \\\
+0, \text{otherwise} \\\
+\end{cases}$
+
+Then, 
+
+$\frac{\partial C}{\partial a_{kl}} = y_i x_j \frac{\partial a_{ij}}{\partial a_{kl}}$
+
+since $y_i, x_j$ don't depend on $a_{kl}$.
+
+Now, 
+
+$\frac{\partial a_{ij}}{\partial a_{kl}} = \begin{cases}
+1, \text{if } i=k, j=l \\\
+0, \text{otherwise}
+\end{cases}$
+
+Another way of writing this is:
+
+$\frac{\partial a_{ij}}{\partial a_{kl}} = \delta_{i,k}\delta_{j,l}$
+
+So,
+
+$\frac{\partial C}{\partial a_{kl}} = y_i x_j \frac{\partial a_{ij}}{\partial a_{kl}} = y_i x_j \delta_{i,k}\delta_{j,l}$
+
+But since repeated indices are summed over, when $i=k$ and when $j=l$, we get:
+
+$\frac{\partial C}{\partial a_{kl}} = y_k x_l$
+
+which is exactly the $(k,l)$ element of $yx^T$. So we just showed through explicit calculation that:
+
+$\frac{\delta C}{\delta A} = y x^T$
+
+the same result we got earlier by looking at various dimensions.
+
+Phew! So all this work just to show that if:
+
+$C[A] = y^T A x$
+
+then, 
+
+$\frac{\delta C}{\delta A} = y x^T$
+
+which can be used in gradient descent as:
+
+$A^{t+1} = A^{t} - \eta \frac{\delta C}{\delta A^t}$
+
+Now (anticipating future use), what if 
+
+$C[A, B] = y^T A B x$
+
+is our cost function. Is there an easy way to calculate $\frac{\delta C}{\delta A}$ and $\frac{\delta C}{\delta B}$? You bet there is!
+
+Let's start with $\frac{\delta C}{\delta A}$.
+
+We can define $x' = Bx$ to get $C = y^T A x'$.
+
+We know, $\frac{\delta C}{\delta A} = y x'^T$ from our earlier result and we can just replace $x'$ to get:
+
+$\frac{\delta C}{\delta A} = y (Bx)^T = y x^T B^T$ using the $(AB)^T = B^TA^T$.
+
+On to $\frac{\delta C}{\delta B}$. We can use a similar trick.
+
+$C = (A^Ty)^T B x$ since $(A^Ty)^T = y^T A$
+
+Let's define $y' = A^T y$ to get $C = y'^T B x$. From our previous result:
+
+$\frac{\delta C}{\delta B} = y' x^T = A^T y x^T$
+
+#### Cost quadratic in weights
+
+What if the cost has a different form now?
+
+$C = \frac{1}{2} x^TA^TAx$
+
+Now we have two $A$ matrices multiplying the terms hence it's quadratic in the weights/elements of $A$.
+
+The dimensions are:
+
+$dim(x) = (n,1) \implies dim(x^T) = (1,n)$
+
+$dim(A) = (m,n) \implies dim(A^T) = (n,m)$
+
+Can we still guess what $\frac{\delta C}{\delta A}$ should be from the dimensions alone?
+
+We expect $dim(A) = dim(\frac{\delta C}{\delta A}) = (m,n)$ and also since $C$ is quadratic in $A$, we expect the derivative to be linear in $A$.
+
+Let's take a few guesses:
+
+$\frac{\delta C}{\delta A} = A (x^Tx)$ which works dimensionally since $x^Tx$ is just a number.
+
+$\frac{\delta C}{\delta A} = A (xx^T)$ which works dimensionally since $xx^T$ has dimension $(n,n)$ so we still get something linear in $A$ and with dimension $(m,n)$.
+
+Technically, $\frac{\delta C}{\delta A} = A (xx^T) (xx^T)$ also works. But if we follow our intuition from calculus, $C$ is quadratic in $x$ and the $x$ terms just come along for the ride as constants. Taking derivatives can't change its order. So the final answer also needs to be quadratic in $x$ which rules out $A (xx^T) (xx^T)$ or $A (xx^T)^n$ for $n>1$.
+
+Let's see if we can convince ourselves by doing an explicit calculation. We'll happly use our new index notation to cut through the calculation:
+
+$C = \frac{1}{2} x^TA^TAx = \frac{1}{2} x_i (A^T)\_{ij} (A)\_{jk} x_k = x_i a_{ji} a_{jk} x_k$
+
+where as before repeated indices mean an implicit sum. Now, using the chain rule:
+
+$\frac{\partial C}{\partial a_{cd}} = \frac{1}{2} [x_i \frac{\partial a_{ji}}{\partial a_{cd}} a_{jk} x_k + x_i a_{ji} \frac{\partial a_{jk}}{\partial a_{cd}} x_k]$
+
+$\frac{\partial C}{\partial a_{cd}} = \frac{1}{2} [x_i \delta_{j,c}\delta_{i,d} a_{jk} x_k + x_i a_{ij} \delta_{j,c}\delta_{k,d} x_k] = \frac{1}{2} [x_d a_{ck} x_k + x_i a_{ic}x_d]$
