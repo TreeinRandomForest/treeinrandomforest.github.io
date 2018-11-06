@@ -7,6 +7,13 @@ tags: [deep-learning]
 mathjax: true
 ---
 
+Some assumptions/prerequisites/notes before we start:
+
+* You'll need some familiarity with matrices and matrix multiplication as well as differentiation from calculus (but no integration at all).
+* Ideally, get a few sheets of paper, a pen and a quiet space and work through the calculations as you go alone. Writing something out cements the material exponentially more than just reading it.
+* Unfortunately I don't know how to show the details without mathematics. Please don't be turned off by unusual symbols - they are just strokes on a piece of paper or pixels on a screen.
+* What you'll hopefully take away is that after all the fog clears, the simple act of calculating derivatives for this problem results in simple, iterative equations that let us train neural networks very efficiently.
+
 The last few years have shown an enormous rise in the use of neural networks for supervised-learning tasks. This growth has been driven by multiple factors - exponentially more labeled data, faster and cheaper GPUs (graphics processing units), as well as better understanding of neural network training.
 
 At the same time, the core training algorithm used to train neural networks is still backpropagation and gradient descent. While there are many excellent frameworks like TensorFlow and PyTorch that takes care of the details for the modern machine learning practitioner, it is crucial to understand what they do under the hood. The first step in that journey is understanding what backpropagation actually is.
@@ -856,11 +863,92 @@ $x_3 = W_{23}W_{12}W_{01}x_0$
 
 and the cost is:
 
-$$C[W] = \frac{1}{2}[x_3^Tx_3 - 2 y^Tx_3] = \frac{x_3^Ty}{2} - y^Tx_3 = \frac{1}{2}x_0^TW_{01}^TW_{12}^TW_{23}^TW_{23}W_{12}W_{01}x_0 - y^TW_{23}W_{12}W_{01}x_0$$
+$$C[W_{01}, W_{12}, W_{23}] = \frac{1}{2}[x_3^Tx_3 - 2 y^Tx_3] = \frac{x_3^Ty}{2} - y^Tx_3 = \frac{1}{2}x_0^TW_{01}^TW_{12}^TW_{23}^TW_{23}W_{12}W_{01}x_0 - y^TW_{23}W_{12}W_{01}x_0$$
 
 We can now use our catalog of matrix derivatives to calculate the 3 derivatives needed for gradient descent:
 
 $\frac{\delta C}{\delta W_{01}}, \frac{\delta C}{\delta W_{12}}, \frac{\delta C}{\delta W_{23}}$
+
+$\frac{\delta C}{\delta W_{01}}$:
+
+Let's define $D \equiv W_{23}W_{12}$ to give:
+
+$C = \frac{1}{2} x_0^T W_{01}^T D^T D W_{01} x_0 - y^T E W_{01} x_0$
+
+Then, using identities REF AND REF (tool tips?):
+
+$\frac{\delta C}{\delta W_{01}} = \frac{\delta}{\delta W_{01}} \frac{1}{2} x_0^T W_{01}^T D^T D W_{01} x_0 - \frac{\delta}{\delta W_{01}} y^T D W_{01} x_0 = (D^TD)W_{01}(x_0x_0^T) - D^T y x_0^T$
+
+So,
+
+$\frac{\delta C}{\delta W_{01}} = W_{12}^TW_{23}^T(W_{23}W_{12}W_{01}x_0)x_0^T - W_{12}^TW_{23}^Tyx_0^T$
+
+But, $W_{23}W_{12}W_{01}x_0$ is precisely $x_3$, the result of forward propagation. So, we get a very nice result:
+
+$\frac{\delta C}{\delta W_{01}} = W_{12}^TW_{23}^T(x_3-y)x_0^T$
+
+NOTE about dependence on $x_3-y$
+
+$\frac{\delta C}{\delta W_{12}}$:
+
+Define $u \equiv W_{01}x_0$ to get:
+
+$C = \frac{1}{2}u^TW_{12}^TW_{23}^TW_{23}W_{12}u - y^TW_{23}W_{12}u$
+
+Using identities REF and REF (tooltips), we get:
+
+$\frac{\delta C}{\delta W_{01}} = W_{23}^TW_{23}W_{12}uu^T - W_{23}^Tyu^T$
+
+Replacing $u = W_{01}x_0$,
+
+$\frac{\delta C}{\delta W_{12}} = W_{23}^TW_{23}W_{12}W_{01}x_0x_0^TW_{01}^T - W_{23}^Tyx_0^TW_{01}^T = W_{23}^Tx_3x_1^T - W_{23}^Tyx_1^T = W_{23}^T(x_3-y)x_1^T$
+
+$\frac{\delta C}{\delta W_{23}}$:
+
+Define $D \equiv W_{12}W_{01}$ to get:
+
+$C = \frac{1}{2}x_0^TW_{01}^TW_{12}^TW_{23}^TW_{23}W_{12}W_{01}x_0 - y^TW_{23}W_{12}W_{01}x_0$
+
+$C = \frac{1}{2}x_0^TD^TW_{23}^TW_{23}Dx_0 - y^TW_{23}Dx_0$
+
+Using identities REF and REF (tooltips), we get:
+
+$\frac{\delta C}{\delta W_{23}} = W_{23}D(x_0x_0^T)D^T - y^Tx_0^TD^T$
+
+Replacing $D = W_{12}W_{01}$:
+
+$\frac{\delta C}{\delta W_{23}} = W_{23}W_{12}W_{01}x_0x_0^TW_{01}^TW_{12}^T - y^Tx_0^TW_{01}^TW_{12}^T = (x_3-y)x_2^T$
+
+In summary:
+
+$\frac{\delta C}{\delta W_{01}} = W_{12}^TW_{23}^T(x_3-y)x_0^T$
+
+$\frac{\delta C}{\delta W_{12}} = W_{23}^T(x_3-y)x_1^T$
+
+$\frac{\delta C}{\delta W_{23}} = (x_3-y)x_2^T$
+
+
+Presto!!! We again see forward and backward chains.
+
+Forward chains:
+* ${\color{blue} x_0}$
+* $W_{01} x_0 = {\color{blue} x_1}$
+* $W_{12} W_{01} x_0 = {\color{blue} x_2}$
+* $W_{23} W_{12} W_{01} x_0 = {\color{blue} x_3}$
+
+Backward chains:
+* $x_3-y \equiv {\color{red} {\Delta_0}}$
+* $W_{23}^T(x_3-y) \equiv {\color{red} {\Delta_1}}$
+* $W_{12}^TW_{23}^T(x_3-y) \equiv {\color{red} {\Delta_2}}$
+* $W_{01}^TW_{12}^TW_{23}^T(x_3-y) \equiv {\color{red} {\Delta_3}}$
+
+where we now use capital deltas $\Delta$ instead of small deltas $\delta$, to signify that the backward chains are matrices.
+
+As before, we can succinctly write the derivatives as:
+
+$\frac{\delta C}{\delta W_{i,i+1}} = \Delta_{2-i} x_i^T$
+
+In this notation, this is essentially the same as the results from sections I and II except for the fact that $x_i$ is now a vector and $\Delta_i$ is a matrix.
 
 Testing collapsible markdown
 
