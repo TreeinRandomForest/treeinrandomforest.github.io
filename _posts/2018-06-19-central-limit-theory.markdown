@@ -6,6 +6,8 @@ categories: jekyll update
 mathjax: true
 ---
 
+When I first started writing this post, it was simply a sequence of calculations with the proof. While that is illuminating to the doer, and hopefully to anyone with some undergraduate math and physics, it sheds absolutely no light for anyone else. This is now my attempt at 
+
 Suppose we are given $$n$$ independent, identically distributed (i.i.d.) random variables $$Y_1, Y_2, \ldots, Y_n$$. We are interested in the distribution of 
 
 $$
