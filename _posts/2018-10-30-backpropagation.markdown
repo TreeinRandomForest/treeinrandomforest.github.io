@@ -98,7 +98,6 @@ In the discussion below, we'll assume mean-squared error and exactly one data po
 
 ## Backpropagation I - linear activations
 
-
 We will be working with a very simple network architecture in this section. The architecture is shown in figure X. 
 
 There is an input node taking a vector $x_0$, two internal nodes with values $x_1$ and $x_2$ respectively and an output node with value $x_3$ (also denoted as $\hat{y}$).
@@ -318,7 +317,7 @@ which is gratifying.
 
 ## Backpropagation III - linear activations + multi-node layers
 
-In practice, neural networks with one node per layer are not very helpful. What we really want is to put multiple nodes at each layer to get the classic feedforward neural network shown below. For now, as in Section I, we don't include non-linear activations.
+In practice, neural networks with one node per layer are not very helpful. What we really want is to put multiple nodes at each layer to get the classic feedforward neural network shown below. For now, as in Section I, we won't include non-linear activations.
 
 SOME EXPLANATION OF MATRIX MULTIPLICATION
 
@@ -338,13 +337,41 @@ $x_3 = W_{23}W_{12}W_{01}x_0$
 
 As in section I, there's still the same silliness going on. Why not define $W_c = W_{23}W_{12}W_{01}$ which is just another matrix and do gradient descent on the elements of $W_c$ directly. As before though, we intend on introducing non-linear activations eventually.
 
-In principle, we haven't done anything radically new. We just need to compute a cost and then find the derivatives with respect to each individual weight. Recall that 
+In principle, we haven't done anything radically new. We just need to compute a cost and then find the derivatives with respect to each individual weight. Recall that we were using the mean-squared error metric as a cost function. The only difference is that now the output itself might be a vector:
 
-(NEED TO introduce the idea of vector-valued outputs and notation for transpose)
+$y = (y_1, y_2, \ldots, y_n)$
+
+i.e. there are $n$ labels and the output vector $x_3$ also has $n$ dimensions. So the cost would just be a sum of mean-squared errors for every element in $y$ and $x_3$:
+
+$C = \frac{1}{n} [(x_{3,1}-y_1)^2 + (x_{3,2}-y_2)^2 + \ldots + (x_{3,n}-y_n)^2]$
+
+where $x_3 = (x_{3,1}, x_{3,2}, \ldots, x_{3,n})$
+
+so $x_{3,i}$ denotes the $i$th element of $x_3$.
+
+A more concise way of writing this is as follows:
 
 $C[W_{01}, W_{12}, W_{23}] = \frac{(x_3-y)^T(x_3-y)}{2}$
 
-where $x_3$ is a vector of $N$ outputs obtained by forward propagation the input $x_0$ and $y$ are the $N$ targets/labels.
+where $x^T$ denotes the transpose of a vector. More generally, given a matrix $A$ with elements $a_{ij}$, the transpose of a matrix, denoted by $A^T$ has elements where the rows and columns are flipped. So
+
+$(A^T)\_{ij} = a_{ji}$
+
+Note that the indices on the right-hand side are flipped. An example will make this clear:
+
+$A = \begin{bmatrix}
+a_{11} & a_{12} & a_{13} \\\
+a_{21} & a_{22} & a_{23} \\\
+\end{bmatrix}
+\implies
+A^T = \begin{bmatrix}
+a_{11} & a_{21}\\\
+a_{12} & a_{22}\\\
+a_{13} & a_{23}\\\
+\end{bmatrix}
+$
+
+So, the $ij$-th element of $A^T$ is the $ji$-th element of A. In other words, $A^T$ takes every row of $A$ and makes it into a column. Moreover, transposing a matrix changes its dimensions. If $A$ has $n$ rows and $m$ columns, also written as $dim(A) = (n,m)$, then $A^T$ has $m$ rows and $n$ dimensions i.e. $dim(A^T) = (m,n)$.
 
 INTRODUCE MATRIX DERIVATIVES
 
@@ -355,6 +382,8 @@ $\frac{\delta C}{\delta W_{ij}} \equiv
  \vdots & & \\\
  \frac{\partial C}{\partial w^{(ij)}\_{n1}} & \frac{\partial C}{\partial w^{(ij)}\_{n2}} & \ldots \frac{\partial C}{\partial w^{(ij)}\_{nm}}
 \end{bmatrix}$ 
+
+Expanding the cost function, we get:
 
 $C[W] = \frac{(x_3-y)^T(x_3-y)}{2} = \frac{1}{2}\[x_3^Tx_3 - x_3^Ty - y^Tx_3 + y^Ty\]$
 
@@ -388,7 +417,7 @@ So, we can rewrite the cost
 
 $$C[W] = \frac{1}{2}[x_3^Tx_3 - 2 y^Tx_3] = \frac{x_3^Ty}{2} - y^Tx_3$$
 
-Two observations:
+To reiterate:
 * "$=$" is being misused here since we completely dropped the term $y^Ty$ BUT since we are only using $C$ to find the derivatives for gradient descent and the dropped term doesn't contribute, it doesn't matter. If it makes more comfortable, you could define a new cost $C' = C - y^Ty$ and since minimizing a function $f$ is equivalent to minimizing $f + \text{constant}$, minimizing $C'$ and $C$ is equivalent in the sense that they will result in the same set of minimizing weights.
 * We combined $x_3^Ty$ and $y^T x_3$ since they are equal (hence the factor of 2).
 
@@ -812,6 +841,26 @@ $C = \frac{1}{2} x^TB^TA^TABx$:
 $\frac{\delta C}{\delta A} = AB(xx^T)B^T$
 
 $\frac{\delta C}{\delta B} = (A^TA) B (xx^T)$
+
+It's time to get back to our neural network and put all this together. To recap, our forward propagation was defined as:
+
+$x_1 = W_{01} x_0$
+
+$x_2 = W_{12} x_1$
+
+$x_3 = W_{23} x_2$
+
+or if we combine the equations:
+
+$x_3 = W_{23}W_{12}W_{01}x_0$
+
+and the cost is:
+
+$$C[W] = \frac{1}{2}[x_3^Tx_3 - 2 y^Tx_3] = \frac{x_3^Ty}{2} - y^Tx_3 = \frac{1}{2}x_0^TW_{01}^TW_{12}^TW_{23}^TW_{23}W_{12}W_{01}x_0 - y^TW_{23}W_{12}W_{01}x_0$$
+
+We can now use our catalog of matrix derivatives to calculate the 3 derivatives needed for gradient descent:
+
+$\frac{\delta C}{\delta W_{01}}, \frac{\delta C}{\delta W_{12}}, \frac{\delta C}{\delta W_{23}}$
 
 Testing collapsible markdown
 
