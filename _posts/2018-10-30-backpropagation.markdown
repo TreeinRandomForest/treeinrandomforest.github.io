@@ -950,6 +950,43 @@ $\frac{\delta C}{\delta W_{i,i+1}} = \Delta_{2-i} x_i^T$
 
 In this notation, this is essentially the same as the results from sections I and II except for the fact that $x_i$ is now a vector and $\Delta_i$ is a matrix.
 
+## Backpropagation IV - non-linear activations + multi-node layers
+
+Finally! We can now start building up the full backpropagation for a realistic feedforward neural network with multiple layers, each with multiple nodes and non-linear activations.
+
+We'll use notation similar to section II.
+
+Forward propagation is:
+
+$p_0 = x_0$
+
+$q_0 = \sigma_0(x_0)$
+
+$p_1 = W_{01} q_0$
+
+$q_1 = \sigma_1(p_1)$
+
+$p_2 = W_{12} q_1$
+
+$q_2 = \sigma_2(p_2)$
+
+$p_3 = W_{23} q_2$
+
+$q_3 = \sigma_3(p_3)$
+
+To summarize:
+* $p_i$ and $q_i$ are always vectors.
+* $p_i$ is the "pre-activation" ("p" for "pre") input to a layer. 
+* $q_i$ is the "post-activation" ("q" since it comes after "p") output of a layer.
+* $W_{i,j}$ always takes $q_i \rightarrow \p_j$.
+* $\sigma_i$ always takes $p_i \rightarrow \q_i$.
+
+The last two rules pop out of our equations and while it's just notation, it serves as a powerful guide to ensure that we are not making mistakes. At any point in the calculation if you see the combination $W_{ij} p_i$, something is probably wrong. If we see, $W_{ij}p_k$ where $k\neq i,j$, again something is probably wrong.
+
+We'll use the mean-squared cost which is:
+
+$C[W_{01}, W_{12}, W_{23}]$
+
 Testing collapsible markdown
 
 <details>
