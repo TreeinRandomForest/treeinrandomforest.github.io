@@ -985,7 +985,134 @@ The last two rules pop out of our equations and while it's just notation, it ser
 
 We'll use the mean-squared cost which is:
 
-$C[W_{01}, W_{12}, W_{23}]$
+$C[W_{01}, W_{12}, W_{23}] = \frac{1}{2} (q_3^-y)^2$
+
+As before, we need matrix derivatives but with a twist introduced by the activation functions.
+
+Let's start with a simpler cost that mimics the term linear in $q_3$:
+
+$C[A] = y^T \sigma(A) x$
+
+where the dimensions are:
+
+$\text{dim}(x) = (n,1)$
+
+$\text{dim}(y) = (m,1)$
+
+$\text{dim}(A) = (m,n)$
+
+In other words:
+
+
+$C[A] = \underbrace{y^T}\_{(1,m)} \underbrace{\sigma(A)}\_{(m,n)} \underbrace{x}\_{(n,1)}$
+
+We want to compute 
+
+$\frac{\delta C}{\delta A}$
+
+We can try guessing what this should be based on the dimensions of the matrix. 
+
+* $\frac{\delta C}{\delta A}$ should be linear in $x$ and $y$ 
+* It should also depend on $\sigma'(A)$ where 
+
+$\sigma'(A) = \begin{bmatrix}
+\sigma'(a_{11}) & \sigma'(a_{12}) & \ldots & \sigma'(a_{1n}) \\\
+\sigma'(a_{21}) & \sigma'(a_{22}) & \ldots & \sigma'(a_{2n}) \\\
+\ldots \\\
+\sigma'(a_{m1}) & \sigma'(a_{m2}) & \ldots & \sigma'(a_{mn}) \\\
+\end{bmatrix}$
+
+* $\text{dim}(\frac{\delta C}{\delta A}) = \text{dim}(A) = (m,n)$
+
+* Any guess we come up with should reduce to the special case $\frac{\delta C}{\delta A} = yx^T$ when $\sigma = id$, the identity function, $id(x) = x$.
+
+So we know that:
+
+$\frac{\delta C}{\delta A} = yx^T \bigodot \sigma'(A)$.
+
+where $\bigodot$ is a stand-in for something we need to do to combine $yx^T$ and $\sigma'(A)$. We can't just multiply the two matrices since the dimensions aren't consistent for multiplication, i.e. both these terms have dimension $(m,n)$.
+
+Also, if $\sigma = id$, then $\sigma(x) = x$ and $\sigma'(x) = 1$, then 
+
+$\sigma'(A) = \begin{bmatrix}
+1 & 1 & \ldots & 1 \\\
+1 & 1 & \ldots & 1 \\\
+\ldots \\\
+1 & 1 & \ldots & 1 \\\
+\end{bmatrix}$
+
+i.e. the matrix consisting of only $1$s denoted by $U$.
+
+In this case, we know that the derivative should reduce to:
+
+$\frac{\delta C}{\delta A} = yx^T \bigodot \sigma'(A) = yx^T \bigodot U = yx^T$.
+
+So, for an arbitrary matrix $M$, we know now
+
+$M \bigodot U = A$
+
+where $\text{dim}(M) = \text{dim}(U) = 1$.
+
+Now, we can guess what the operation $\bigodot$ does and then confirm our guess:
+
+Given two matrices $A, B$ with the same dimensions, it seems
+
+$(A\bigodot B)\_{ij} = a_{ij} b_{ij}$
+
+or more explicitly
+
+$\begin{bmatrix}
+a_{11} & a_{12} & \ldots & a_{1n} \\\
+a_{21} & a_{22} & \ldots & a_{2n} \\\
+\ldots \\\
+a_{m1} & a_{m2} & \ldots & a_{mn} \\\
+\end{bmatrix}
+\bigodot
+\begin{bmatrix}
+b_{11} & b_{12} & \ldots & b_{1n} \\\
+b_{21} & b_{22} & \ldots & b_{2n} \\\
+\ldots \\\
+b_{m1} & b_{m2} & \ldots & b_{mn} \\\
+\end{bmatrix}
+= \begin{bmatrix}
+a_{11}b_{11} & a_{12}b_{12} & \ldots & a_{1n}b_{1n} \\\
+a_{21}b_{21} & a_{22}b_{22} & \ldots & a_{2n}b_{2n} \\\
+\ldots \\\
+a_{m1}b_{m1} & a_{m2}b_{m2} & \ldots & a_{mn}b_{mn} \\\
+\end{bmatrix}$
+
+So if all $b_{ij}=$, then we recover $A$ as expected. While we are still not quite sure if this is correct, our guess is:
+
+$\frac{\delta C}{\delta A} = yx^T \bigodot \sigma'(A)$
+
+where $(A \bigodot B)\_{ij} = a_{ij} b_{ij}$.
+
+Let's confirm this with a more detailed calculation using the Einstein index notation:
+
+$C = y_i \sigma(a_{ij}) x_j$
+
+NEED TO CLEAR NOTATION
+
+$\frac{\partial C}{\partial a_{kl}} = y_i x_j \sigma'(a_{ij}) \frac{\partial a_{ij}}{\partial a_{kl}} = y_k x_l \sigma'(a_{kl})$
+
+$\frac{\partial C}{\partial a_{kl}} = [\frac{\delta C}{\delta A}]\_{kl} = y_k x_l \sigma'(a_{kl}) = (yx^T)\_{kl} \sigma'(a_{kl}) = [yx^T \bigodot \sigma'(A)]\_{kl}$
+
+i.e.
+
+$\frac{\delta C}{\delta A} = yx^T \bigodot \sigma'(A)$
+
+as claimed before.
+
+Anticipating future use, consider
+
+$C = y^T \sigma_1(A \sigma_2(B)) x$
+
+and the derivatives
+
+$\frac{\delta C}{\delta A}, \frac{\delta C}{\delta B}$
+
+$\frac{\delta C}{\delta A}$:
+
 
 Testing collapsible markdown
 
