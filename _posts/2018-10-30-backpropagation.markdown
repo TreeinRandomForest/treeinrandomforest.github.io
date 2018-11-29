@@ -7,16 +7,9 @@ tags: [deep-learning]
 mathjax: true
 ---
 
-Some assumptions/prerequisites/notes before we start:
+The last few years have shown an enormous rise in the use of neural networks for supervised-learning tasks. This growth has been driven by multiple factors - exponentially more labeled data to train with, faster and cheaper GPUs (graphics processing units) that parallelize linear algebra operations used extensively by deep learning, as well as a better understanding of the process of neural network training.
 
-* You'll need some familiarity with matrices and matrix multiplication as well as differentiation from calculus (but no integration at all).
-* Ideally, get a few sheets of paper, a pen and a quiet space and work through the calculations as you go alone. Writing something out cements the material exponentially more than just reading it.
-* Unfortunately I don't know how to show the details without mathematics. Please don't be turned off by unusual symbols - they are just strokes on a piece of paper or pixels on a screen.
-* What you'll hopefully take away is that after all the fog clears, the simple act of calculating derivatives for this problem results in simple, iterative equations that let us train neural networks very efficiently.
-
-The last few years have shown an enormous rise in the use of neural networks for supervised-learning tasks. This growth has been driven by multiple factors - exponentially more labeled data, faster and cheaper GPUs (graphics processing units), as well as better understanding of neural network training.
-
-At the same time, the core training algorithm used to train neural networks is still backpropagation and gradient descent. While there are many excellent frameworks like TensorFlow and PyTorch that takes care of the details for the modern machine learning practitioner, it is crucial to understand what they do under the hood. The first step in that journey is understanding what backpropagation actually is.
+At the same time, the core training algorithm used to train neural networks is still **backpropagation** and gradient descent. While there are many excellent frameworks like TensorFlow and PyTorch that takes care of the details for the modern machine learning practitioner, it is crucial to understand what they do under the hood. The first step in that journey is understanding what backpropagation actually is.
 
 # Global View of the Training Process
 
@@ -24,7 +17,7 @@ One can view a neural network as a black box that maps certain input vectors $\v
 
 $$\vec{y} = f(\vec{x})$$
 
-$f$ also depends on several underlying parameters, also known as weights, denoted by $\vec{w}$:
+$f$ depends on several underlying parameters, also known as weights, denoted by $\vec{w}$:
 
 $$\vec{y} = f(\vec{x}; \vec{w})$$
 
@@ -33,6 +26,8 @@ The situation isn't unlike linear regression where the output $y$:
 $$y = w_1 x_1 + w_2 x_2 + \ldots + w_n x_n = \vec{w}.\vec{x}$$
 
 is a function of the input $\vec{x}$ with some parameters $\vec{w}$.
+
+Time for some pedantry - technically both $\vec{x}$ and $\vec{w}$ are inputs to $f$ and this distinction between the "inputs" $\vec{x}$ and the "weights" $\vec{w}$ seems silly. The separation actually encodes the beautiful idea that $f$ actually denotes a *family* of functions, one for each particular $\vec{w}$ and the central duty of any machine learning algorithm is to pick one function out of the family so that it best describes/understands our data. One can make this more explicity by writing $f_{\vec{w}}(\vec{x})$ instead of $f(\vec{x}; \vec{w})$ but the latter is easier to write notationally.
 
 The central problem then is the discovery of the correct $\vec{w}$. What does that even mean? Well, given a dataset with input vectors and the corresponding outputs (labels), one uses $f$ with random weights $\vec{w}$ to make predictions, measures the deviation between the predictions and labels and tweaks the weights to minimize the deviation.
 
@@ -102,6 +97,13 @@ where $\eta$ is a constant of proportionality called the **learning rate**, $\mi
 $$w_{i+1} = w_{i} - \eta \frac{dC[w_i]}{dw}$$
 
 In the discussion below, we'll assume mean-squared error and exactly one data point.
+
+Some assumptions/prerequisites/notes before we start:
+
+* You'll need some familiarity with matrices and matrix multiplication as well as differentiation from calculus (but no integration at all).
+* Ideally, get a few sheets of paper, a pen and a quiet space and work through the calculations as you go alone. Writing something out cements the material exponentially more than just reading it.
+* Unfortunately I don't know how to show the details without mathematics. Please don't be turned off by unusual symbols - they are just strokes on a piece of paper or pixels on a screen.
+* What you'll hopefully take away is that after all the fog clears, the simple act of calculating derivatives for this problem results in simple, iterative equations that let us train neural networks very efficiently.
 
 ## Backpropagation I - linear activations
 
@@ -326,7 +328,6 @@ which is gratifying.
 
 In practice, neural networks with one node per layer are not very helpful. What we really want is to put multiple nodes at each layer to get the classic feedforward neural network shown below. For now, as in Section I, we won't include non-linear activations.
 
-SOME EXPLANATION OF MATRIX MULTIPLICATION
 
 Forward propagation in this architecture is:
 
@@ -336,7 +337,52 @@ $x_2 = W_{12} x_1$
 
 $x_3 = W_{23} x_2$
 
-where the $W_{ij}$ are matrices of weights! We used $w_{ij}$ to refer to an individual weight in sections I and II and we'll use $W_{ij}$ to refer to the **weight matrix** that takes us from layer $i$ to layer $j$.
+where the $W_{ij}$ are matrices of weights. We used $w_{ij}$ to refer to an individual weight in sections I and II and we'll use $W_{ij}$ to refer to the **weight matrix** that takes us from layer $i$ to layer $j$.
+
+To be more explicit, 
+
+$x_0 = \begin{bmatrix}
+x_1^{(0)} \\\
+x_2^{(0)} \\\
+\vdots \\\
+x_n^{(0)}
+\end{bmatrix}$
+
+and,
+
+$W_{01} = \begin{bmatrix}
+w_{11}^{(01)} & w_{12}^{(01)} & \ldots & w_{1n}^{(01)} \\\
+w_{21}^{(01)} & w_{22}^{(01)} & \ldots & w_{2n}^{(01)} \\\
+\vdots \\\
+w_{m1}^{(01)} & w_{m2}^{(01)} & \ldots & w_{mn}^{(01)} \\\
+\end{bmatrix}$
+
+and $x_1 = \underbrace{\begin{bmatrix}
+x_1^{(1)} \\\
+x_2^{(1)} \\\
+\vdots \\\
+x_m^{(1)}
+\end{bmatrix}}\_{(m,1)}
+= \underbrace{\begin{bmatrix}
+w_{11}^{(01)} & w_{12}^{(01)} & \ldots & w_{1n}^{(01)} \\\
+w_{21}^{(01)} & w_{22}^{(01)} & \ldots & w_{2n}^{(01)} \\\
+\vdots \\\
+w_{m1}^{(01)} & w_{m2}^{(01)} & \ldots & w_{mn}^{(01)} \\\
+\end{bmatrix}}\_{(m,n)}
+\underbrace{\begin{bmatrix}
+x_1^{(0)} \\\
+x_2^{(0)} \\\
+\vdots \\\
+x_n^{(0)}
+\end{bmatrix}}\_{(n,1)}
+=\underbrace{\begin{bmatrix}
+w_{11}^{(01)} x_1^{(0)}  + w_{12}^{(01)} x_2^{(0)} + \ldots + w_{1n}^{(01)} x_n^{(0)} \\\
+w_{21}^{(01)} x_1^{(0)}  + w_{22}^{(01)} x_2^{(0)} + \ldots + w_{2n}^{(01)} x_n^{(0)} \\\
+\vdots \\\
+w_{m1}^{(01)} x_1^{(0)}  + w_{m2}^{(01)} x_2^{(0)} + \ldots + w_{mn}^{(01)} x_n^{(0)} \\\
+\end{bmatrix}}\_{(m,1)}$
+
+The superscripts denote the object a number belongs to. So, $x_{k}^{(0)}$ is the $k$th element of $x_0$ and $w_{ij}^{(01)}$ is the element in the $i$th row and $j$th column of $W_{01}$. The **dimensions** of the various objects are highlighted under the objects. $(m,n)$ means an object has $m$ rows and $n$ columns. We will often write $\text{dim}(A) = (m,n)$ to denote the dimension of object $A$.
 
 We can combine these equations to write:
 
@@ -350,11 +396,9 @@ $y = (y_1, y_2, \ldots, y_n)$
 
 i.e. there are $n$ labels and the output vector $x_3$ also has $n$ dimensions. So the cost would just be a sum of mean-squared errors for every element in $y$ and $x_3$:
 
-$C = \frac{1}{n} [(x_{3,1}-y_1)^2 + (x_{3,2}-y_2)^2 + \ldots + (x_{3,n}-y_n)^2]$
+$C = \frac{1}{2} [(x_1^{(3)}-y_1)^2 + (x_{2}^{(3)}-y_2)^2 + \ldots + (x_{n}^{(3)}-y_n)^2]$
 
-where $x_3 = (x_{3,1}, x_{3,2}, \ldots, x_{3,n})$
-
-so $x_{3,i}$ denotes the $i$th element of $x_3$.
+where $x_3 = (x_{1}^{(3)}, x_{2}^{(3)}, \ldots, x_{n}^{(3)})$
 
 A more concise way of writing this is as follows:
 
@@ -378,17 +422,7 @@ a_{13} & a_{23}\\\
 \end{bmatrix}
 $
 
-So, the $ij$-th element of $A^T$ is the $ji$-th element of A. In other words, $A^T$ takes every row of $A$ and makes it into a column. Moreover, transposing a matrix changes its dimensions. If $A$ has $n$ rows and $m$ columns, also written as $dim(A) = (n,m)$, then $A^T$ has $m$ rows and $n$ dimensions i.e. $dim(A^T) = (m,n)$.
-
-INTRODUCE MATRIX DERIVATIVES
-
-$\frac{\delta C}{\delta W_{ij}} \equiv 
-\begin{bmatrix} 
- \frac{\partial C}{\partial w^{(ij)}\_{11}} & \frac{\partial C}{\partial w^{(ij)}\_{12}} & \ldots \frac{\partial C}{\partial w^{(ij)}\_{1m}} \\\
- \frac{\partial C}{\partial w^{(ij)}\_{21}} & \frac{\partial C}{\partial w^{(ij)}\_{22}} & \ldots \frac{\partial C}{\partial w^{(ij)}\_{2m}} \\\
- \vdots & & \\\
- \frac{\partial C}{\partial w^{(ij)}\_{n1}} & \frac{\partial C}{\partial w^{(ij)}\_{n2}} & \ldots \frac{\partial C}{\partial w^{(ij)}\_{nm}}
-\end{bmatrix}$ 
+So, the $ij$-th element of $A^T$ is the $ji$-th element of A. In other words, $A^T$ takes every row of $A$ and makes it into a column. Moreover, transposing a matrix changes its dimensions. If $\text{dim}(A) = (m,n)$ then $\text{dim}(A^T) = (n,m)$.
 
 Expanding the cost function, we get:
 
@@ -396,7 +430,7 @@ $C[W] = \frac{(x_3-y)^T(x_3-y)}{2} = \frac{1}{2}\[x_3^Tx_3 - x_3^Ty - y^Tx_3 + y
 
 The only term that doesn't depend on the weights matrices is $y^Ty$ and is a constant once the dataset is fixed (i.e. the labels are fixed). So we can neglect this term from here on since it'll never contribute to our derivatives.
 
-Also, $x_3^Ty = y^Tx_3$ since they are both just dot products between the same vectors. More explicitly, if $x_3 = (a_1 a_2 \ldots a_n)$ and $y = (b_1 b_2 \ldots b_n)$, then
+Also, $x_3^Ty = y^Tx_3$ since they are both just dot products between the same pair of vectors. More explicitly, if $x_3 = (a_1 a_2 \ldots a_n)$ and $y = (b_1 b_2 \ldots b_n)$, then
 
 $x_3^Ty = [a_1 a_2 \ldots a_n]
 \begin{bmatrix}
@@ -434,7 +468,20 @@ $w_{ab}^{(ij), t+1} = w_{ab}^{(ij), t} - \eta \frac{\partial C}{\partial w_{ab}^
 
 Some notes on notation. In $w_{ab}^{(ij), t+1}$, the $t$ refers to the step in gradient descent, $(ij)$ refers to the matrix $W_{ij}$ that the weight comes from and $ab$ refers to the matrix element, i.e. row $a$ and column $b$. This horrible tragedy of notational burden is 1) very annoying, 2) absolutely devoid of any insight. Sure we can compute this mess and maybe even elegantly but unlike sections I and II, there seem to be no nice backward chains here. To prepare a nice meal, one has to sometimes do a lot of "prep" i.e. preparation of ingredients and "pre-processing" them. Using mathematics to understand and gain insights is no different. So we'll take a nice de-tour to introduce the idea of **matrix derivatives**.
 
-### Aside: Matrix derivatives or "I don't like a million indices"
+### Aside: Matrix derivatives
+
+Instead of writing the gradient descent update equation for each weight, we would like to write it for each weight matrix:
+
+$W_{ij}^{(t+1)} = W_{ij}^{(t)} - \eta \frac{\delta C}{\delta W_{ij}^{(t)}}$
+
+where we have introduced $\frac{\delta C}{\delta W_{ij}^{(t)}}$, the derivative of the cost with respect to a matrix! For the above equation to be well-defined, $\frac{\delta C}{\delta W_{ij}^{(t)}}$ would need to have dimensions of $W_{ij}$ and would be defined as:
+
+$\frac{\delta C}{\delta W_{ij}} = \begin{bmatrix}
+\frac{\partial C}{\partial w_{11}^{(ij)}} & \frac{\partial C}{\partial w_{12}^{(ij)}} & \ldots & \frac{\partial C}{\partial w_{1n}^{(ij)}} \\\
+\frac{\partial C}{\partial w_{21}^{(ij)}} & \frac{\partial C}{\partial w_{22}^{(ij)}} & \ldots & \frac{\partial C}{\partial w_{2n}^{(ij)}} \\\
+\vdots \\\
+\frac{\partial C}{\partial w_{m1}^{(ij)}} & \frac{\partial C}{\partial w_{m2}^{(ij)}} & \ldots & \frac{\partial C}{\partial w_{mn}^{(ij)}} \\\
+\end{bmatrix}$
 
 #### Cost linear in weights
 
@@ -444,21 +491,13 @@ $C[A] = y^TAx$
 
 where $x, y$ are vectors and $A$ is a matrix. More precisely,
 
-$x: (n, 1)$
+$\text{dim}(x) = (n,1)$
 
-$A: (m, n)$
+$\text{dim}(A) = (m,n)$
 
-$y: (m, 1)$
+$\text{dim}(y) = (m,1)$
 
-where we define the dimensions of each object.
-
-$x: (n,1)$ means $x$ has $n$ rows and 1 column.
-
-$A: (m,n)$ means $A$ has m rows and n columns.
-
-$y: (m,1)$ means $y$ has m rows and 1 column or $y^T: (1,m)$ i.e. $y^T$ has 1 row and m columns as one would expect from transposing it.
-
-Why is all this important? Because the product $O_1O_2$ is only defined when
+Why are the dimensions important? Because the product $O_1O_2$ is only defined when
 
 $\text{number of columns of } O_1 = \text{number of rows of } O_2$
 
@@ -468,22 +507,23 @@ $(\text{number of rows of }O_1, \text{number of columns of }O_2)$
 
 A more concise way of writing this is:
 
-$O_1: (n_1, k)$
-$O_2: (k, m_2)$
+$\text{dim}(O_1) = (n_1, k)$
 
-$O_1O_2: (n_1, m_2)$
+$\text{dim}(O_2) = (k, m_2)$
+
+$\implies \text{dim}(O_1O_2) = (n_1, m_2)$
 
 For our case,
 
 $C[A] = \underbrace{y^T}\_{(1,m)}\underbrace{A}\_{(m,n)}\underbrace{x}\_{(n,1)}$
 
-and $C[A]: (1,1)$ i.e. it's just a number which is what we expected to get for the cost.
+and $\text{dim}(C[A]): (1,1)$ i.e. it's just a number which is what we expected to get for the cost.
 
 Our notation for the cost:
 
-$C[A]$ 
+$C[A]$
 
-betrays our intention to keep $x, y$ fixed and minimize $C$ as a function of the elements of $A$. We'll still use gradient descent which requires that we compute the derivatives of $C$ with respect to the elements of $A$.
+betrays our intention to keep $x, y$ fixed and minimize $C$ as a function of the elements of $A$. We will still use gradient descent which requires that we compute the derivatives of $C$ with respect to the elements of $A$.
 
 $A = \begin{bmatrix}
 	a_{11} & a_{12} & \ldots & a_{1n} \\\
@@ -509,15 +549,15 @@ $\frac{\delta C}{\delta A} \equiv \begin{bmatrix}
 	\frac{\partial C}{\partial a_{m1}} & \frac{\partial C}{\partial a_{m2}} & \ldots & \frac{\partial C}{a_{mn}} \\\
 \end{bmatrix}$
 
+where $\text{dim}(A) = \text{dim}(\frac{\delta C}{\delta A}) = (m,n)$
+
 We can then write:
 
 $A^{t+1} = A^{t} - \eta \frac{\delta C}{\delta A^t}$
 
-i.e. update the whole matrix in one go!
+i.e. update the whole matrix in one go! Please note that the superscript $t$ is for the time-step NOT tranpose. For tranpose, we always use a *capital* T.
 
-For \REF above to be define, we require $dim(A) = dim(\frac{\delta C}{\delta A}) = (m,n)$.
-
-We also know that $C$ is linear in the elements of $A$ (more below) and so the derivatives should not depend on $A$ - just like the derivative of $f(x) = ax + b$ with respect to x, $\frac{df}{dx} = a$ doesn't depend on $x$. So, $\frac{\delta C}{\delta A}$ can only depend on $x,y$ and the only way to construct a matrix of dimension $(m,n)$ from $x$ and $y$ is 
+We also know that $C$ is linear in the elements of $A$ (more exposition on this below) and so the derivatives should not depend on $A$ - just like the derivative of $f(x) = ax + b$ with respect to x, $\frac{df}{dx} = a$ doesn't depend on $x$. So, $\frac{\delta C}{\delta A}$ can only depend on $x,y$ and the only way to construct a matrix of dimension $(m,n)$ from $x$ and $y$ is 
 
 $\underbrace{y}\_{(m,1)}\underbrace{x^T}\_{(1,n)} = \begin{bmatrix}
 y_1 \\\
@@ -560,7 +600,7 @@ $C[A] = \begin{bmatrix}
 	a_{21} x_1 + a_{22} x_2 + \ldots + a_{2n} x_n \\\
 	\ldots \\\
 	a_{m1} x_1 + a_{m2} x_2 + \ldots + a_{mn} x_n \\\
-\end{bmatrix} \\\ = y_1 a_{11} x_1 + y_1 a_{12} x_2 + \ldots y_1 a_{1n} x_n + \\\ \space\space y_2 a_{21} x_1 + y_2 a_{22} x_2 + \ldots y_2 a_{2n} x_n + \\\ \space\space y_m a_{m1} x_1 + y_m a_{m2} x_2 + \ldots y_m a_{mn} x_n$
+\end{bmatrix} \\\ = (y_1 a_{11} x_1 + y_1 a_{12} x_2 + \ldots y_1 a_{1n} x_n) + (y_2 a_{21} x_1 + y_2 a_{22} x_2 + \ldots y_2 a_{2n} x_n) +  (y_m a_{m1} x_1 + y_m a_{m2} x_2 + \ldots y_m a_{mn} x_n)$
 
 If we look closely at the last line, all the terms are of the form $y_i a_{ij} x_j$ (which is exactly how one writes matrix multiplication). So, we could write this as:
 
@@ -576,7 +616,7 @@ To be clear, $y_i a_{ij} x_j$ is the same as $\Sigma_{i=1}^{m}\Sigma_{j=1}^{n} y
 
 $y_i a_{ij} x_j = y_{bob} a_{bob,nancy} x_{nancy}$
 
-It doesn't matter at all what we can the indices.
+It doesn't matter at all what we can the indices. All that matters is that repeated indices get summed over.
 
 Great! so we computed an explicit form of $C$ and now we want derivatives with respect to $a_{kl}$ where $k,l$ are just indices denoting row k and column l. 
 
@@ -640,37 +680,43 @@ is our cost function. Is there an easy way to calculate $\frac{\delta C}{\delta 
 
 Let's start with $\frac{\delta C}{\delta A}$.
 
-We can define $x' = Bx$ to get $C = y^T A x'$.
+We can define $x' = Bx$ to get $C = y^T A x'$:
 
-We know, $\frac{\delta C}{\delta A} = y x'^T$ from our earlier result and we can just replace $x'$ to get:
+$C = y^T A \underbrace{B x}\_{x'} = y^T A x'$
 
-$\frac{\delta C}{\delta A} = y (Bx)^T = y x^T B^T$ using the $(AB)^T = B^TA^T$.
+We know $\frac{\delta C}{\delta A} = y x'^T$ from our earlier result and we can just replace $x'$ to get:
+
+$\frac{\delta C}{\delta A} = y x'^T = y (Bx)^T = y x^T B^T$ using the fact $(AB)^T = B^TA^T$.
 
 On to $\frac{\delta C}{\delta B}$. We can use a similar trick.
 
-$C = (A^Ty)^T B x$ since $(A^Ty)^T = y^T A$
+$C = y^T A B x = (A^Ty)^T B x$ since $(A^Ty)^T = y^T A$
 
-Let's define $y' = A^T y$ to get $C = y'^T B x$. From our previous result:
+Let's define $y' = A^T y$:
+
+$C = {\underbrace{(A^Ty)}\_{y'}}^T B x = y'^T B x$
+
+From our previous result:
 
 $\frac{\delta C}{\delta B} = y' x^T = A^T y x^T$
 
 #### Cost quadratic in weights
 
-What if the cost has a different form now?
+Anticipating future use again, let's consider a quadratic cost function:
 
 $C = \frac{1}{2} x^TA^TAx$
 
-Now we have two $A$ matrices multiplying the terms hence it's quadratic in the weights/elements of $A$.
+We have two $A$ matrices multiplying the terms hence it's quadratic in the weights/elements of $A$.
 
 The dimensions are:
 
-$dim(x) = (n,1) \implies dim(x^T) = (1,n)$
+$\text{dim}(x) = (n,1) \implies dim(x^T) = (1,n)$
 
-$dim(A) = (m,n) \implies dim(A^T) = (n,m)$
+$\text{dim}(A) = (m,n) \implies dim(A^T) = (n,m)$
 
 Can we still guess what $\frac{\delta C}{\delta A}$ should be from the dimensions alone?
 
-We expect $dim(A) = dim(\frac{\delta C}{\delta A}) = (m,n)$ and also since $C$ is quadratic in $A$, we expect the derivative to be linear in $A$.
+We expect $\text{dim}(A) = \text{dim}(\frac{\delta C}{\delta A}) = (m,n)$ and also since $C$ is quadratic in $A$, we expect the derivative to be linear in $A$.
 
 Let's take a few guesses:
 
@@ -708,7 +754,7 @@ $\frac{\delta C}{\delta A} = Ax x^T$.
 
 We still have one more calculation to do that will be crucial for doing back-propagation on our multi-node neural network.
 
-Now,
+Suppose,
 
 $C = \frac{1}{2} x^T B^T A^T A B x$
 
@@ -724,31 +770,31 @@ Again we'll guess our solution base on dimensions and then explicitly compute it
 
 We are given the sizes:
 
-$dim(x) = (n,1) \implies dim(x^T) = (1,n)$
+$\text{dim}(x) = (n,1) \implies dim(x^T) = (1,n)$
 
-$dim(B) = (m, n) \implies dim(B^T) = (n, m)$
+$\text{dim}(B) = (m, n) \implies dim(B^T) = (n, m)$
 
-$dim(A) = (l, m) \implies dim(A^T) = (m,l)$
+$\text{dim}(A) = (l, m) \implies dim(A^T) = (m,l)$
 
-We also expect $dim(\frac{\delta C}{\delta B}) = dim(B) = (m,n)$. As before, the derivative should be linear in $B$, quadratic in $A$ and $x$ since they are for all practical purposes, constants for us.
+We also expect $\text{dim}(\frac{\delta C}{\delta B}) = \text{dim}(B) = (m,n)$. As before, the derivative should be linear in $B$, quadratic in $A$ and $x$ since they are for all practical purposes, constants for us.
 
 So, let's see what modular pieces we have to work with:
 
 Quadratic in $x$:
 
-$dim(x^Tx) = (1,1)$
+$\text{dim}(x^Tx) = (1,1)$
 
-$dim(xx^T) = (n,n)$
+$\text{dim}(xx^T) = (n,n)$
 
 Quadratic in $A$:
 
-$dim(A A^T) = (l,l)$
+$\text{dim}(A A^T) = (l,l)$
 
-$dim(A^T A) = (m,m)$
+$\text{dim}(A^T A) = (m,m)$
 
 Linear in $B$:
 
-$dim(B) = (m,n)$
+$\text{dim}(B) = (m,n)$
 
 So we can multiply $B$ on the right by something that is $(1,1)$ i.e. $x^Tx$ or $(n,n)$ i.e. $xx^T$ and on the left by something that is $(m,m)$ i.e. $A^TA$.
 
@@ -827,7 +873,7 @@ confirming our suspicion that:
 
 $\frac{\delta C}{\delta B}] = (DBxx^T) = (A^TA)B(xx^T)$
 
-That's it! I promise that's the end of index manipulation exercises. We'll now collect all our results and use them to show that we still get backward chains as before.
+That's it! I promise that's the end of index manipulation exercises for this section. We'll now collect all our results and use them to show that we still get backward chains as before.
 
 $C = y^TAx$:
 
@@ -974,18 +1020,26 @@ $p_3 = W_{23} q_2$
 
 $q_3 = \sigma_3(p_3)$
 
+$\begin{array}{ccc}
+p_0 = x_0 & q_0 = \sigma_0(x_0) \\\
+p_1 = W_{01} q_0 & q_1 = \sigma_1(p_1) \\\
+p_2 = W_{12} q_1 & q_2 = \sigma_2(p_2) \\\
+p_3 = W_{23} q_2 & q_3 = \sigma_3(p_3) \\\
+\end{array}$
+
+
 To summarize:
 * $p_i$ and $q_i$ are always vectors.
 * $p_i$ is the "pre-activation" ("p" for "pre") input to a layer. 
 * $q_i$ is the "post-activation" ("q" since it comes after "p") output of a layer.
-* $W_{i,j}$ always takes $q_i \rightarrow \p_j$.
-* $\sigma_i$ always takes $p_i \rightarrow \q_i$.
+* $W_{i,j}$ always takes $q_i \rightarrow p_j$.
+* $\sigma_i$ always takes $p_i \rightarrow q_i$.
 
 The last two rules pop out of our equations and while it's just notation, it serves as a powerful guide to ensure that we are not making mistakes. At any point in the calculation if you see the combination $W_{ij} p_i$, something is probably wrong. If we see, $W_{ij}p_k$ where $k\neq i,j$, again something is probably wrong.
 
 We'll use the mean-squared cost which is:
 
-$C[W_{01}, W_{12}, W_{23}] = \frac{1}{2} (q_3^-y)^2$
+$C[W_{01}, W_{12}, W_{23}] = \frac{1}{2} (q_3-y)^2$
 
 As before, we need matrix derivatives but with a twist introduced by the activation functions.
 
@@ -1002,7 +1056,6 @@ $\text{dim}(y) = (m,1)$
 $\text{dim}(A) = (m,n)$
 
 In other words:
-
 
 $C[A] = \underbrace{y^T}\_{(1,m)} \underbrace{\sigma(A)}\_{(m,n)} \underbrace{x}\_{(n,1)}$
 
@@ -1112,6 +1165,8 @@ and the derivatives
 $\frac{\delta C}{\delta A}, \frac{\delta C}{\delta B}$
 
 $\frac{\delta C}{\delta A}$:
+
+
 
 
 Testing collapsible markdown
