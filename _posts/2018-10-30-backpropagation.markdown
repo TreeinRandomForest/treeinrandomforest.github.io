@@ -9,7 +9,7 @@ mathjax: true
 
 The last few years have shown an enormous rise in the use of neural networks for supervised-learning tasks. This growth has been driven by multiple factors - exponentially more labeled data to train with, faster and cheaper GPUs (graphics processing units) that parallelize linear algebra operations used extensively by deep learning, as well as a better understanding of the process of neural network training.
 
-At the same time, the core training algorithm used to train neural networks is still **backpropagation** and gradient descent. While there are many excellent frameworks like TensorFlow and PyTorch that takes care of the details for the modern machine learning practitioner, it is crucial to understand what they do under the hood. The first step in that journey is understanding what backpropagation actually is.
+At the same time, the core training algorithm used to train neural networks is still **backpropagation** and **gradient descent**. While there are many excellent frameworks like <a href="https://www.tensorflow.org/">TensorFlow</a> and <a href="https://pytorch.org/">PyTorch</a> that take care of the details for the modern machine learning practitioner, it is crucial to understand what they do under the hood. The first step in that journey is understanding what backpropagation actually is.
 
 # Global View of the Training Process
 
@@ -27,11 +27,11 @@ $$y = w_1 x_1 + w_2 x_2 + \ldots + w_n x_n = \vec{w}.\vec{x}$$
 
 is a function of the input $\vec{x}$ with some parameters $\vec{w}$.
 
-Time for some pedantry - technically both $\vec{x}$ and $\vec{w}$ are inputs to $f$ and this distinction between the "inputs" $\vec{x}$ and the "weights" $\vec{w}$ seems silly. The separation actually encodes the beautiful idea that $f$ actually denotes a *family* of functions, one for each particular $\vec{w}$ and the central duty of any machine learning algorithm is to pick one function out of the family so that it best describes/understands our data. One can make this more explicity by writing $f_{\vec{w}}(\vec{x})$ instead of $f(\vec{x}; \vec{w})$ but the latter is easier to write notationally.
+Time for some pedantry - technically both $\vec{x}$ and $\vec{w}$ are inputs to $f$ and this distinction between the "inputs" $\vec{x}$ and the "weights" $\vec{w}$ seems silly. The separation actually encodes the beautiful idea that $f$ actually denotes a *family* of functions, one for each particular $\vec{w}$ and the central duty of any machine learning algorithm is to pick one function out of the family so that it best describes/understands our data. One can make this more explicit by writing $f_{\vec{w}}(\vec{x})$ instead of $f(\vec{x}; \vec{w})$ but the latter is easier to write notationally.
 
 The central problem then is the discovery of the correct $\vec{w}$. What does that even mean? Well, given a dataset with input vectors and the corresponding outputs (labels), one uses $f$ with random weights $\vec{w}$ to make predictions, measures the deviation between the predictions and labels and tweaks the weights to minimize the deviation.
 
-As an example, one commonly used measure of deviation is **mean-squared error** which is especially useful for regression problems. Another one commonly used is **cross-entropy** (or **negative-log-likelihood**) which is used for classification problems. For simplicity, we'll use mean-squared error below but the discussion is minimally changed if one uses a different error metric.
+As an example, one commonly used measure of deviation is **mean-squared error** which is especially useful for regression problems. Another one commonly used is **cross-entropy** (or **negative-log-likelihood**) which is used for classification problems. There are many more and you can/should write your own depending on the problem you are solving. For simplicity, we'll use mean-squared error below but the discussion is minimally changed if one uses a different error metric.
 
 The mean-squared error measures the deviation between the label $y$ and the prediction $\hat{y}$ as:
 
@@ -39,64 +39,77 @@ $$error = \frac{(\hat{y}-y)^2}{2}$$
 
 Dividing by 2 is purely a convention that will become clear later on. If the label and prediction agree, this error is 0 and the more they disagree, the higher the error. For a dataset, one would just average the errors:
 
-$$C = \frac{1}{n} \Sigma_{i=0}^{n} \frac{(\hat{y}_i-y_i)^2}{2}$$
+$$C = \frac{1}{n} \Sigma_{i=0}^{n} \frac{(\hat{y}\_i-y_i)^2}{2}$$
 
 where we introduced the symbol $C$ which stands for **cost**. The terms **cost**, **loss**, **error**, **deviance** are often used interchangeably but we'll stick to cost from now on. $n$ is the number of examples in the dataset and the symbol $\Sigma$ (capital "Sigma") denotes a sum over all the errors.
 
-Since the predictions are functions of $\vec{w}$, $C$ actually depends on $\vec{w}$ as well:
+Since the predictions, $\hat{y}\_i = f(\vec{x}\_i; \vec{w})$ are functions of $\vec{w}$, $C$ actually depends on $\vec{w}$ as well:
 
-$$C[\vec{w}] = \frac{1}{n} \Sigma_{i=0}^{n} \frac{(f(\vec{x}_i; \vec{w})-y_i)^2}{2}$$
+$$C[\vec{w}] = \frac{1}{n} \Sigma_{i=0}^{n} \frac{(f(\vec{x}\_i; \vec{w})-y_i)^2}{2}$$
 
 where we made $C[\vec{w}]$ denotes $C$'s dependence on $\vec{w}$ .
 
-We would now pick some random $\vec{w}$, make predictions $f(\vec{x}_{i}; \vec{w})$ and compute the cost $C[\vec{w}]$. Our next task is to tweak $\vec{w}$ and repeat the procedure so that $C[\vec{w}]$ decreases. Our end goal is to minimize the cost, $C[\vec{w}]$ and the set of weights $\vec{w}$ that would do that would define our final model.
+We would now pick some random $\vec{w}$, make predictions $f(\vec{x}\_{i}; \vec{w})$ and compute the cost $C[\vec{w}]$. Our next task is to tweak $\vec{w}$ and repeat the procedure so that $C[\vec{w}]$ decreases. Our end goal is to minimize the cost, $C[\vec{w}]$ and the set of weights $\vec{w}$ that would do that would define our final model.
 
 The big question here is two-fold:
-* How should we choose the initial weights, $\vec{w}_0$ (the "0" denotes "initial")?
+* How should we choose the initial weights, $\vec{w}^{(0)}$ (the "0" denotes "initial")?
 
-* Once we compute $C[\vec{w}\_{i}]$ with a given $\vec{w}\_{i}$, how should we choose the next $\vec{w}\_{i+1}$ so that **in the long run**, we decrease $C[\vec{w}]$?
+* Once we compute $C[\vec{w}^{(t)}]$ with a given $\vec{w}^{(t)}$, how should we choose the next $\vec{w}^{(t+1)}$ so that **in the long run**, we decrease $C[\vec{w}]$?
 
 There's some new notation above so let's take a moment to clearly define what we mean:
 
-Think of the process of updating the weights $\vec{w}$ as a process that occurs once every second. At time $t=0$, we start with a randomly generated $\vec{w}\_0$. At time $t$, the weights will be $\vec{w}\_{t}$. We want a rule to go from $\vec{w}\_{i}$ to $\vec{w}\_{i+1}$.
+Think of the process of updating the weights $\vec{w}$ as a process that occurs once every second. At time $t=0$, we start with a randomly generated $\vec{w}^{(0)}$. At time $t$, the weights will be $\vec{w}^{(t)}$. We want a rule to go from $\vec{w}^{(t)}$ to $\vec{w}^{(t+1)}$, i.e. from time-step $t$ to time-step $t+1$.
 
 One way to minimize $C[\vec{w}]$ is a "greedy" approach. Let's look at a simple example that is one-dimensional i.e. there's only one element in $\vec{w}$ called $w$, which is a real number:
 
-!PICTURE
+{% include image.html url="/assets/backprop/gradientdescent.svg" description="Fig 1. A simple cost function in one variable i.e. with one weight" %}
 
-This is a nice situation where there is exactly one minimum at $w\_{\*}$. Let's suppose, we are $w\_{R}$ ($R$ denotes "right" and $L$ denotes "left"). We know we need to move to the left or in the negative direction. We also know the slope of the cost curve is positive ("pointing up") at $w\_R$. On the other, suppose we are $w_L$. We need to move to the right or in the positive direction while the slope is negative ("pointing down") at $w_L$.
+This is a nice situation where there is exactly one minimum at $w\_{\*}$. Let's suppose, we are at $w\_{R}$ ($R$ denotes "right" and $L$ denotes "left"). We know we need to move to the left or in the negative direction. We also know the slope of the cost curve is positive ("pointing up") at $w\_R$. On the other hand, suppose we are at $w_L$. We need to move to the right or in the positive direction while the slope is negative ("pointing down") at $w_L$.
 
 In other words:
-* When the slope of the cost function is positive, we need to move the weight to the negative direction i.e. decrease the weight.
+* When the slope of the cost function is positive, we need to move the weight in the negative direction i.e. decrease the weight.
 * When the slope is negative, we need to move the weight in the positive direction i.e. increase the weight.
 
 Mathematically,
 
-$$w_{i+1} = w_{i} - \text{(something)} \text{(sign of slope)}$$
+$$w^{(t+1)} = w^{(t)} - \text{(something)} \text{(sign of slope)}$$
 
-where $\text{something}$ is a positive number (so it won't change the sign of the term) which signifies the magnitude of the change in $w_{i}$.
+where $\text{something}$ is a positive number (so it won't change the sign of the term) which signifies the magnitude of the change in $w^{(t)}$.
 
 When the slope is positive, we get:
 
-$w_{i+1} = w_{i} - \text{(positive)} \text{(positive)} = w_{i} - \text{positive}$
+$w^{(t+1)} = w^{(t)} - \text{(positive)} \text{(positive)} = w^{(t)} - \text{positive}$
 
-i.e. $w_{i+1} < w_{i}$ so we moved in the negative direction.
+i.e. $w^{(t+1)} < w^{(t)}$ so we moved in the negative direction.
 
 When the slope is negative, we get:
 
-$w_{i+1} = w_{i} - \text{(positive)} \text{(negative)} = w_{i} + \text{positive}$
+$w^{(t+1)} = w^{(t)} - \text{(positive)} \text{(negative)} = w^{(t)} + \text{positive}$
 
-i.e. $w_{i+1} > w_{i}$ so we moved in the positive direction.
+i.e. $w^{(t+1)} > w^{(t)}$ so we moved in the positive direction.
 
 We still need to decide what $\text{something}$ is. It's usually taken to be proportional to the magnitude of the slope:
 
-$$w_{i+1} = w_{i} - \eta \mid{\frac{dC[w_i]}{dw}}\mid \text{(sign of slope)}$$
+$$w^{(t+1)} = w^{(t)} - \eta \mid{\frac{dC[w^{(t)}]}{dw}}\mid \text{(sign of slope)}$$
 
-where $\eta$ is a constant of proportionality called the **learning rate**, $\mid\frac{dC[w_i]}{dw}\mid$ is the absolute value of the slope (or derivative) at the point $w_i$. We don't need to separate out the magnitude of the slope and the sign of the slope and we can simply write:
+where $\eta$ is a constant of proportionality called the **learning rate**, $\mid\frac{dC[w^{(t)}]}{dw}\mid$ is the absolute value of the slope (or derivative) at the point $w^{(t)}$. We don't need to separate out the magnitude of the slope and the sign of the slope and we can simply write:
 
-$$w_{i+1} = w_{i} - \eta \frac{dC[w_i]}{dw}$$
+$$w^{(t+1)} = w^{(t)} - \eta \frac{dC[w^{(t)}]}{dw} \label{graddesc}$$
 
-In the discussion below, we'll assume mean-squared error and exactly one data point.
+This generalizes easily to a cost function depending on multiple weights $\vec{w}$. We just compute the derivative of the cost with respect to each element of $\vec{w}$ and update the weights according to equation $\ref{graddesc}$. In particular, if $\vec{w} = (w_1, w_2, \ldots, w_N)$ are the $N$ weights, we compute the partial derivatives, $\frac{\partial C}{\partial w_i}$ for each $i$ and update each weight as follows:
+
+$$w_i^{(t+1)} = w_i^{(t)} - \eta \frac{\partial C[\vec{w}^{(t)}]}{\partial w_i} \label{multidimgd1}$$
+
+This is usually written more succinctly as:
+
+$$\vec{w}^{(t+1)} = \vec{w}^{(t)} - \eta \nabla C[\vec{w}^{(t)}] \label{multidimgd2}$$
+
+but ignore the extra notation here for now. The two equations $\ref{multidimgd1}$ and $\ref{multidimgd2}$ are completely equivalent.
+
+**The main takeaway from the above discussion is that we *really really* care about the derivatives of the cost with respect to the weights since we need them to update the weights to minimize the cost and to hopefully get a well-performing model. If we can find an efficient way to do so, it would make it possible to train neural networks on non-trivial datasets. That efficient way is backpropagation.**
+
+
+In the discussion below, we'll assume mean-squared error and exactly one data point. Both of these assumptions are straightforward to remove.
 
 Some assumptions/prerequisites/notes before we start:
 
@@ -107,7 +120,9 @@ Some assumptions/prerequisites/notes before we start:
 
 ## Backpropagation I - linear activations
 
-We will be working with a very simple network architecture in this section. The architecture is shown in figure X. 
+We will be working with a very simple network architecture in this section. The architecture is shown in figure 2 below:
+
+{% include image.html url="/assets/backprop/nn_1.svg" description="Fig 2. A simple feedforward linear neural network" %} 
 
 There is an input node taking a vector $x_0$, two internal nodes with values $x_1$ and $x_2$ respectively and an output node with value $x_3$ (also denoted as $\hat{y}$).
 
