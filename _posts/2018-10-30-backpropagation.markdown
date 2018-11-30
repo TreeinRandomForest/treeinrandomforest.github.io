@@ -111,11 +111,11 @@ but ignore the extra notation here for now. The two equations $\ref{multidimgd1}
 
 In the discussion below, we'll assume mean-squared error and exactly one data point. Both of these assumptions are straightforward to remove.
 
-Some assumptions/prerequisites/notes before we start:
+Some other assumptions/prerequisites/notes before we start:
 
 * You'll need some familiarity with matrices and matrix multiplication as well as differentiation from calculus (but no integration at all).
-* Ideally, get a few sheets of paper, a pen and a quiet space and work through the calculations as you go alone. Writing something out cements the material exponentially more than just reading it.
-* Unfortunately I don't know how to show the details without mathematics. Please don't be turned off by unusual symbols - they are just strokes on a piece of paper or pixels on a screen.
+* Ideally, get a few sheets of paper, a pen and a quiet space and work through the calculations as you go along. Writing something out cements the material far more than just reading it.
+* Unfortunately I don't know how to show the details without mathematics. Please don't be turned off by unusual symbols - they are just strokes on a piece of paper or pixels on a screen. There is often a debate about the importance of mathematical content in machine learning and deep learning. While it is true that one doesn't need to know the mathematical details to apply many of these techniques (at least at a basic level) and that many papers use mathematics to obscure instead of illuminate concepts, mathematics gives a precise and beautiful understanding of what these algorithms are doing. It is still our most direct probe into complex systems and most of all, it is fun.
 * What you'll hopefully take away is that after all the fog clears, the simple act of calculating derivatives for this problem results in simple, iterative equations that let us train neural networks very efficiently.
 
 ## Backpropagation I - linear activations
@@ -124,11 +124,11 @@ We will be working with a very simple network architecture in this section. The 
 
 {% include image.html url="/assets/backprop/nn_1.svg" description="Fig 2. A simple feedforward linear neural network" %} 
 
-There is an input node taking a vector $x_0$, two internal nodes with values $x_1$ and $x_2$ respectively and an output node with value $x_3$ (also denoted as $\hat{y}$).
+There is an input node taking a number $x_0$, two internal nodes with values $x_1$ and $x_2$ respectively and an output node with value $x_3$ (also denoted as $\hat{y}$, as before).
 
 There are three weights: $w_{01}$, $w_{12}$, and $w_{23}$ respectively. You should read $w_{ij}$ as the weight "transforming the value at node i to the value at node j".
 
-More precisely, the forward propagation in this architecture is:
+More precisely, forward propagation or inference or prediction in this architecture is:
 
 $x_1 = w_{01} x_0$
 
@@ -140,19 +140,21 @@ We can substitude the values iteratively to get:
 
 $x_3 = w_{23} x_2 = w_{23} w_{12} x_1 = w_{23} w_{12} w_{01} x_0$
 
+In other words, given an input $x_0$, our function $f$ will predict $x_3$ defined above.
+
 There is something silly going on here. Why would we have all these weights when we can define a new weight, say $w_{c} \equiv w_{23} w_{12} w_{01}$ (the "c" stands for combined) and define the following architecture going straight from the input to the output
+
+{% include image.html url="/assets/backprop/nn_1_short.svg" description="Fig 3. Simplified neural network with combined weights" %}
 
 $x_3 = w_c x_0$
 
 You are absolutely right if you made that observation and it's a very important point. Just combining these "linear" nodes doesn't do anything. We need to add non-linearities to be able to learn arbitrarily complicated functions $f$. But for now, bear with me since this sections lays the groundwork for the next section where we introduce non-linearities into the network architecture.
 
-Going back to our network, to implement backpropagation, we need to calculate all the derivatives of the cost function with respect to the weights.
+Going back to our network, to execute gradient descent, we need to calculate all the derivatives of the cost function with respect to the weights.
 
-The cost is
+If we only had one data point $x_0$ with our prediction $x_3$ and the actual value $y$, the cost would be
 
 $C[\vec{w}] = C[w_{01}, w_{12}, w_{23}] = \frac{(x_3 - y)^2}{2}$
-
-where $y$ is the actual value/label in our dataset and is a constant (independent of $\vec{w})$.
 
 Expanding, we get
 
@@ -171,6 +173,7 @@ $\frac{\partial C}{\partial w_{01}} = (x_3-y) w_{23} w_{12} x_0$
 We see a couple of patterns here:
 
 * There is one derivative for each weight.
+* The factor of $\frac{1}{2}$ was useful because the derivative "pulls down" a factor of 2 from $(x_3-y)^2$ and the factors cancel out.
 * Each derivative is proportional to $(x_3 - y)$ or the deviation between the prediction and the target/label. If the deviation is 0, then all the derivatives are 0 and there are no corrections to the weights during gradient descent, as should be the case.
 * One can think of two "chains" - a forward chain and a backward chain.
 	* Forward chains look like:
@@ -184,6 +187,8 @@ We see a couple of patterns here:
 		* $w_{12} w_{23} (x_3 - y)$
 		* $w_{01} w_{12} w_{23} (x_3 - y)$
 	* Both forward and backward chains show up in the derivatives.
+
+In other words, forward chains are what one would get if one walks from the left to the right of the network and multiplies the factors together. Backward chains are what one would get if one walked from the right to the left.
 
 To make the above point clearer, let's rewrite the derivatives with the weights in order from left to right and any **missing weight is colored in red**.
 
@@ -201,11 +206,11 @@ Define:
 
 $\delta_0 = x_3-y$
 
-$\delta_1 = w_{23} (x_3 - y)$
+$\delta_1 = w_{23} (x_3 - y) = {\color{green} {w_{23}\delta_0}}$
 
-$\delta_2 = w_{12} w_{23} (x_3 - y)$
+$\delta_2 = w_{12} w_{23} (x_3 - y) = {\color{green} {w_{12}\delta_1}}$
 
-$\delta_3 = w_{01} w_{12} w_{23} (x_3 - y)$
+$\delta_3 = w_{01} w_{12} w_{23} (x_3 - y) = {\color{green} {w_{01} \delta_2}}$
 
 Using these new symbols, we can write the derivatives in a very simple manner:
 
@@ -220,13 +225,25 @@ In other words, we always get the combination $\delta_{A} x_{B}$ where $A+B=2$ a
 
 $\frac{\partial C}{\partial w_{i,i+1}} = \delta_{2-i} x_i$
 
-There is no magic about the "2". It is the number of hidden layers.
+There is no magic about the "2". It is the number of hidden layers i.e. the number of nodes excluding the input and the output nodes. 
 
-The main advantage here is that as one makes predictions, one has to calculate the forward chains - $x_1, x_2, x_3$ and once one calculates the deviation $(x_3 - y)$, calculating the backward chains is just an iterative multiplication by the weights but going in the reverse direction. So far so good but this is still just a linear neural network with nothing interesting going on. Let's add non-linearities into the mix.
+The main advantage here is that as one makes predictions, one has to calculate the forward chains - $x_1, x_2, x_3$ and once one calculates the deviation $(x_3 - y)$, calculating the backward chains is just an iterative multiplication by the weights but going in the reverse direction. So in two passes through the network, one can calculate all the derivatives.
+
+To get a sense of why this is so promising, imagine we knew nothing about backpropagation and someone handed us the neural network in Fig 2. To calculate the derivatives, we could use finite differences. For example,
+
+$$\frac{\partial C[w_{01}, w_{12}, w_{23}]}{\partial w_{01}} \approx \frac{C[w_{01} + \epsilon, w_{12}, w_{23}] - C[w_{01}-\epsilon, w_{12}, w_{23}]}{2\epsilon} $$
+
+where $\epsilon$ is some pre-decided small number ($\approx$ stands for "approximately equal to"). This basically exploits the definition of a derivative:
+
+$$\frac{df(x)}{dx} = \lim_{\epsilon\rightarrow 0} \frac{f(x+\epsilon) - f(x)}{\epsilon}$$
+
+If $\epsilon$ is small enough, we'll have a reasonably accurate estimate of the derivative. Since we are numerically (as opposed to analytically) computing the derivative, $\frac{f(x+\epsilon) - f(x-\epsilon)}{2\epsilon}$ is better behaved but let's not worry about that. The main point is that to numerically evaluate the *approximation* of the derivative, we have to do forward propagation *twice* - once to calculate $C[w_{01} + \epsilon, w_{12}, w_{23}]$ and once to calculate $C[w_{01} - \epsilon, w_{12}, w_{23}]$. All this for just *one* damn derivative. If we have $N$ weights, we'll end up doing two forward propagations for each one to do a total of **$2N$** forward propagation passes!!!! and only get approximate derivatives! Compare that to the one forward and one backward pass we did with our iterative equation above to get the derivative without any numerical approximation errors.
+
+So far so good but this is still just a linear neural network with nothing interesting going on. Let's add non-linearities into the mix and hope that this story repeats.
 
 ## Backpropagation II - non-linear activations
 
-We will still maintain the same architecture consisting of a single node for each of the 4 layers. The new addition is an extra operation at each node except for the input node.
+We will still maintain the same overall architecture. The new twist is an extra operation at each node.
 
 A **linear** function $g(\vec{x})$ is any function with the following property:
 
@@ -234,9 +251,17 @@ $g(a\vec{x} + b\vec{y}) = ag(\vec{x}) + bg(\vec{y})$
 
 where $a, b$ are constant real numbers and $\vec{x}, \vec{y}$ are $n$-dimensional vectors.
 
-Linear functions can be very useful and the whole subject of **linear algebra** studies vector spaces and linear functions between them. But, most real systems in the world are not linear. We want our neural network to be able to learn arbitrary non-linear functions. To enable this, we need to add some non-linear function at various points.
+The simplest example of a linear function is $f(x) = \alpha x$. Then, 
 
-At each node, we now define two numbers:
+$f(ax+by) = \alpha (ax+by) = a (\alpha x) + b (\alpha y) = a f(x) + b f(y)$.
+
+An example of a function that is not linear (**non-linear**) is $f(x) = \sqrt{x}$. A simple counterexample suffices - $f(4) = 2, f(9) = 3$ but $f(4+9) = \sqrt{13} \neq f(4)+f(9)=5$.
+
+Linear functions can be very useful and the whole subject of **linear algebra** studies mathematical objects called vector spaces and linear functions between them. But most real systems in the world are not linear. Think of height as a function of age - it doesn't increase by the same amount each year but instead stabilizes and even decreases with age. We want our neural network to be able to learn arbitrary non-linear functions. To enable this, we need to sprinkle some non-linear functions at various points throughout our architecture.
+
+{% include image.html url="/assets/backprop/nn_2.svg" description="Fig 4. Feedforward neural network with non-linear functions $\sigma_i$ inserted." %}
+
+In figure 4, each box represents one of our original nodes split into two operations. At each node, we now define two numbers:
 
 $p_i$ is the value **before** the non-linear function is applied (p is for "pre")
 
@@ -244,7 +269,7 @@ $q_i$ is the value **after** the non-linear function is applied (q since it come
 
 and $i$ denotes which layer/node we are talking about. The non-linear function, also commonly known as the **activation function** or just **activation** is denoted by $\sigma_i$. This can potentially be different at every single layer/node.
 
-Forward propagation is now modified where every equation in REFERENCE is now split into two parts as shown below:
+Forward propagation is now modified with every original forward propagation equation split into two:
 
 $p_0 = x_0 \text(input) \rightarrow q_0 = \sigma_0(p_0)$
 
@@ -258,7 +283,7 @@ The input $x_0$ is now denoted by $p_0$ for notational consistency. $p_0$ is now
 
 As a special case, consider $\sigma_i(x) = id(x) = x$ where $id$ denotes the identity function that maps every input to itself - $id(x) = x$. In that case, $p_i = q_i$ and we get our old linear neural network back.
 
-To be more explicity about the output $q_3$'s dependence on the weights, we can combine equations REFERENCE:
+To be more explicit about the output $q_3$'s dependence on the weights, we can combine the equations:
 
 $q_3 = \sigma_3(w_{23}\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0))))$
 
@@ -272,21 +297,23 @@ $C[\vec{w}] = \frac{(\sigma_3(w_{23}\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0))
 
 Let's take a step back and realize that we really haven't done anything very different. All we did was add 4 activations to our neural network, compute the output and evaluate the cost to see how well we did. As before what we really care about are the derivatives of the cost with respect to the weights so we can do gradient descent.
 
-Using calculus, we can explicitly compute the derivatives (and write all the terms explicitly for clarity):
+Using the chain rule from calculus, we can explicitly compute the derivatives (and write all the terms explicitly for clarity):
 
-$\frac{\partial C}{\partial w_{23}} = (q_3-y) \sigma_3'(w_{23}\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0)))) \sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0)))$
+$\frac{\partial C}{\partial w_{23}} = \underline{(q_3-y)} \space \underline{\sigma_3'(w_{23}\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0))))} \space \underline{\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0)))}$
 
-$\frac{\partial C}{\partial w_{12}} = (q_3-y) \sigma_3'(w_{23}\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0)))) w_{23} \sigma_2'(w_{12}\sigma_1(w_{01}\sigma_0(p_0))) \sigma_1(w_{01}\sigma_0(p_0))$
+$\frac{\partial C}{\partial w_{12}} = \underline{(q_3-y)} \space \underline{\sigma_3'(w_{23}\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0))))} \space \underline{w_{23}}\space \underline{\sigma_2'(w_{12}\sigma_1(w_{01}\sigma_0(p_0)))} \space \underline{\sigma_1(w_{01}\sigma_0(p_0))}$
 
-$\frac{\partial C}{\partial w_{01}} = (q_3-y) \sigma_3'(w_{23}\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0)))) w_{23} \sigma_2'(w_{12}\sigma_1(w_{01}\sigma_0(p_0))) w_{12} \sigma_1'(w_{01}\sigma_0(p_0)) \sigma_0(p_0) $
+$\frac{\partial C}{\partial w_{01}} = \underline{(q_3-y)}\space \underline{\sigma_3'(w_{23}\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0))))} \space \underline{w_{23}} \space \underline{\sigma_2'(w_{12}\sigma_1(w_{01}\sigma_0(p_0)))} \space \underline{w_{12}} \space \underline{\sigma_1'(w_{01}\sigma_0(p_0))}\space\underline{\sigma_0(p_0)} $
 
-This is great! We can already do some sanity checks and make a few observations:
+Here $\sigma'(x)$ is short-hand notation for $\frac{d\sigma}{dx}$ to prevent the notation from getting heavy. The underlines are to delineate various terms that show up.
+
+This is promising! We can already do some sanity checks and make a few observations:
 
 Sanity checks:
 * All the derivatives are proportional to $(q_3-y)$. In other words, if your prediction is exactly equal to the label, there are no derivatives and hence no gradient descent to do which is precisely what one would expect.
-* If we replace all the activations by the identity function, $id(x) = x$ with $id'(x) = 1$, then we can replace the derivatives with 1, all the $q_i = p_i = x_i$ and we recover the derivatives for Case I (REFERENCE).
+* If we replace all the activations by the identity function, $id(x) = x$ with $id'(x) = 1$, then we can replace the derivatives with 1, all the $q_i = p_i = x_i$ and we recover the derivatives for Case I without the activation functions.
 
-Observations:
+Some observations:
 * We still get both forward chains and backward chains:
 	* Forward chains now look like:
 		* ${\color{blue} {p_0}}$
@@ -307,7 +334,7 @@ Observations:
 		* $(q_3 - y) \sigma_3'(p_3) w_{23} \sigma_2'(p_2) w_{12} \sigma_1'(p_1)$
 		* $(q_3 - y) \sigma_3'(p_3) w_{23} \sigma_2'(p_2) w_{12} \sigma_1'(p_1) w_{01}$
 		* $(q_3 - y) \sigma_3'(p_3) w_{23} \sigma_2'(p_2) w_{12} \sigma_1'(p_1) w_{01} \sigma_0'(p_0)$
-		* These now have derivatives and if $\sigma_i(x) = id(x)$, we can replace the derivatives by 1 and recover the backward chains from CASE I.
+		* These now have derivatives and if $\sigma_i(x) = id(x)$, we can replace the derivatives by 1 and recover the backward chains from Case I.
 
 As before, let's rewrite the derivatives with missing terms highlighted in ${\color{red} {red}}$.
 
@@ -317,13 +344,15 @@ $\frac{\partial C}{\partial w_{12}} = (q_3-y) \sigma_3'(w_{23}\sigma_2(w_{12}\si
 
 $\frac{\partial C}{\partial w_{01}} = (q_3-y) \sigma_3'(w_{23}\sigma_2(w_{12}\sigma_1(w_{01}\sigma_0(p_0)))) w_{23} \sigma_2'(w_{12}\sigma_1(w_{01}\sigma_0(p_0))) w_{12} \sigma_1'(w_{01}\sigma_0(p_0)) {\color{red} {w_{01}}} \sigma_0(p_0) $
 
-Define:
+Define new symbols for the backward chains:
 
 $\delta_0 = (q_3-y) \sigma_3'(p_3)$
 
-$\delta_1 = (q_3-y) \sigma_3'(p_3) w_{23} \sigma_2'(p_2)$
+$\delta_1 = (q_3-y) \sigma_3'(p_3) w_{23} \sigma_2'(p_2) = {\color{green} {\delta_0 w_{23} \sigma'(p_2)}}$
 
-$\delta_2 = (q_3-y) \sigma_3'(p_3) w_{23}) \sigma_2'(p_2) w_{12} \sigma_1'(p_1)$
+$\delta_2 = (q_3-y) \sigma_3'(p_3) w_{23} \sigma_2'(p_2) w_{12} \sigma_1'(p_1) = {\color{ green} {\delta_1 w_{12} \sigma'(p_1)}}$
+
+$\delta_3 = (q_3 - y) \sigma_3'(p_3) w_{23} \sigma_2'(p_2) w_{12} \sigma_1'(p_1) w_{01} \sigma_0'(p_0) = {\color{green} {\delta_2 w_{01} \sigma'(p_0)}}$
 
 Using these, we can rewrite the derivatives:
 
@@ -337,12 +366,13 @@ As before, we get the same pattern:
 
 $\frac{\partial C}{\partial w_{i,i+1}} = \delta_{2-i} q_i$
 
-which is gratifying. 
+which is gratifying. As before, during the forward pass, we incrementally calculate $q_1, q_2, q_3$ and then we iteratively do a backward pass and calculate $\delta_0, \delta_1, \delta_2$.
 
 ## Backpropagation III - linear activations + multi-node layers
 
 In practice, neural networks with one node per layer are not very helpful. What we really want is to put multiple nodes at each layer to get the classic feedforward neural network shown below. For now, as in Section I, we won't include non-linear activations.
 
+{% include image.html url="/assets/backprop/nn_3.svg" description="Fig 5. Multi-node linear feedforward network." %}
 
 Forward propagation in this architecture is:
 
