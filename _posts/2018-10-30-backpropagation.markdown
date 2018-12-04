@@ -117,6 +117,8 @@ Some other assumptions/prerequisites/notes before we start:
 * Ideally, get a few sheets of paper, a pen and a quiet space and work through the calculations as you go along. Writing something out cements the material far more than just reading it.
 * Unfortunately I don't know how to show the details without mathematics. Please don't be turned off by unusual symbols - they are just strokes on a piece of paper or pixels on a screen. There is often a debate about the importance of mathematical content in machine learning and deep learning. While it is true that one doesn't need to know the mathematical details to apply many of these techniques (at least at a basic level) and that many papers use mathematics to obscure instead of illuminate concepts, mathematics gives a precise and beautiful understanding of what these algorithms are doing. It is still our most direct probe into complex systems and most of all, it is fun.
 * What you'll hopefully take away is that after all the fog clears, the simple act of calculating derivatives for this problem results in simple, iterative equations that let us train neural networks very efficiently.
+* Lastly, backpropagation is probably deeply flawed. There are some big questions here - 1) do animal brains actually learn via a mechanism like backpropagation, 2) are there alternatives that lead to better solutions in far shorter amount of time and with small amounts of data, 3) what is the exact nature of the so-called cost landscape i.e. the behavior of the cost as a function of the weights. As you read the article below, I urge you to be bold and think of alternatives to backpropagation.
+
 
 ## Backpropagation I - linear activations
 
@@ -382,7 +384,7 @@ $x_2 = W_{12} x_1$
 
 $x_3 = W_{23} x_2$
 
-where the $W_{ij}$ are matrices of weights. We used $w_{ij}$ to refer to an individual weight in sections I and II and we'll use $W_{ij}$ to refer to the **weight matrix** that takes us from layer $i$ to layer $j$.
+where the $W_{ij}$ are matrices of weights. We used $w_{ij}$ to refer to an individual weight, like the ones in sections I and II and we'll use $W_{ij}$ to refer to the **weight matrix** that takes us from layer $i$ to layer $j$. $x_i$ are now vectors and ideally should be written as $\vec{x}\_i$ but we'll omit the vector sign.
 
 To be more explicit, 
 
@@ -433,7 +435,7 @@ We can combine these equations to write:
 
 $x_3 = W_{23}W_{12}W_{01}x_0$
 
-As in section I, there's still the same silliness going on. Why not define $W_c = W_{23}W_{12}W_{01}$ which is just another matrix and do gradient descent on the elements of $W_c$ directly. As before though, we intend on introducing non-linear activations eventually.
+As in section I, there's still the same silliness going on. Why not define $W_c = W_{23}W_{12}W_{01}$ which is just another matrix and do gradient descent on the elements of $W_c$ directly. As before though, we are preparing to introduce non-linear activations in the next section.
 
 In principle, we haven't done anything radically new. We just need to compute a cost and then find the derivatives with respect to each individual weight. Recall that we were using the mean-squared error metric as a cost function. The only difference is that now the output itself might be a vector:
 
@@ -449,7 +451,16 @@ A more concise way of writing this is as follows:
 
 $C[W_{01}, W_{12}, W_{23}] = \frac{(x_3-y)^T(x_3-y)}{2}$
 
-where $x^T$ denotes the transpose of a vector. More generally, given a matrix $A$ with elements $a_{ij}$, the transpose of a matrix, denoted by $A^T$ has elements where the rows and columns are flipped. So
+where $x^T$ denotes the transpose of a vector. So,
+
+$x = \begin{bmatrix} 
+x_1 \\\
+x_2 \\\
+\vdots \\\
+x_n \end{bmatrix} \implies x^T = [x_1, x_2, \ldots, x_n]
+$
+
+More generally, given a matrix $A$ with elements $a_{ij}$, the transpose of a matrix, denoted by $A^T$ has elements where the rows and columns are flipped. So
 
 $(A^T)\_{ij} = a_{ji}$
 
@@ -469,9 +480,22 @@ $
 
 So, the $ij$-th element of $A^T$ is the $ji$-th element of A. In other words, $A^T$ takes every row of $A$ and makes it into a column. Moreover, transposing a matrix changes its dimensions. If $\text{dim}(A) = (m,n)$ then $\text{dim}(A^T) = (n,m)$.
 
-Expanding the cost function, we get:
+Going back to the cost function:
 
-$C[W] = \frac{(x_3-y)^T(x_3-y)}{2} = \frac{1}{2}\[x_3^Tx_3 - x_3^Ty - y^Tx_3 + y^Ty\]$
+$C = \frac{(x_3-y)^T(x_3-y)}{2} = \frac{1}{2} [x^{(3)}\_1-y_1, x^{(3)}\_2-y_2, \ldots, x^{(3)}\_n-y_n] \begin{bmatrix}
+x^{(3)}\_1-y_1 \\\
+x^{(3)}\_2-y_2 \\\
+\vdots \\\
+x^{(3)}\_n-y_n \\\
+\end{bmatrix}$
+
+$\implies C = \frac{1}{2} [(x_1^{(3)}-y_1)^2 + (x_{2}^{(3)}-y_2)^2 + \ldots + (x_{n}^{(3)}-y_n)^2]$
+
+showing that the first form is just a more concise way of writing our original cost function.
+
+Expanding, we get:
+
+$C = \frac{(x_3-y)^T(x_3-y)}{2} = \frac{1}{2}\[x_3^Tx_3 - x_3^Ty - y^Tx_3 + y^Ty\]$
 
 The only term that doesn't depend on the weights matrices is $y^Ty$ and is a constant once the dataset is fixed (i.e. the labels are fixed). So we can neglect this term from here on since it'll never contribute to our derivatives.
 
@@ -501,17 +525,17 @@ The two values are the same.
 
 So, we can rewrite the cost 
 
-$$C[W] = \frac{1}{2}[x_3^Tx_3 - 2 y^Tx_3] = \frac{x_3^Ty}{2} - y^Tx_3$$
+$$C[W] = \frac{1}{2}[x_3^Tx_3 - 2 y^Tx_3] = \frac{x_3^Ty}{2} - y^Tx_3 \label{multidimcost}$$
 
 To reiterate:
-* "$=$" is being misused here since we completely dropped the term $y^Ty$ BUT since we are only using $C$ to find the derivatives for gradient descent and the dropped term doesn't contribute, it doesn't matter. If it makes more comfortable, you could define a new cost $C' = C - y^Ty$ and since minimizing a function $f$ is equivalent to minimizing $f + \text{constant}$, minimizing $C'$ and $C$ is equivalent in the sense that they will result in the same set of minimizing weights.
+* "$=$" is being misused here since we completely dropped the term $y^Ty$ BUT since we are only using $C$ to find the derivatives for gradient descent and the dropped term doesn't contribute, it doesn't matter. If it makes you more comfortable, you could define a new cost $C' = C - y^Ty$ and since minimizing a function $f$ is equivalent to minimizing $f + \text{constant}$, minimizing $C'$ and $C$ is equivalent in the sense that they will result in the same set of minimizing weights.
 * We combined $x_3^Ty$ and $y^T x_3$ since they are equal (hence the factor of 2).
 
-Good progress! We are no minimizing (\REF to above cost). Now, we can compute the derivative with respect to every matrix element of every matrix $W_{ij}$ and do gradient descent on each one:
+Good progress! We are minimizing equation $\ref{multidimcost}$. We can compute the derivative with respect to every matrix element $w^{(ij)}\_{ab}$ of every matrix $W_{ij}$ and do gradient descent on each one:
 
-$w_{ab}^{(ij), t+1} = w_{ab}^{(ij), t} - \eta \frac{\partial C}{\partial w_{ab}^{(ij), t+1}}$
+$w_{ab}^{(ij), (t+1)} = w_{ab}^{(ij), (t)} - \eta \frac{\partial C}{\partial w_{ab}^{(ij), (t+1)}}$
 
-Some notes on notation. In $w_{ab}^{(ij), t+1}$, the $t$ refers to the step in gradient descent, $(ij)$ refers to the matrix $W_{ij}$ that the weight comes from and $ab$ refers to the matrix element, i.e. row $a$ and column $b$. This horrible tragedy of notational burden is 1) very annoying, 2) absolutely devoid of any insight. Sure we can compute this mess and maybe even elegantly but unlike sections I and II, there seem to be no nice backward chains here. To prepare a nice meal, one has to sometimes do a lot of "prep" i.e. preparation of ingredients and "pre-processing" them. Using mathematics to understand and gain insights is no different. So we'll take a nice de-tour to introduce the idea of **matrix derivatives**.
+We are using the same notation as in sections I and II. In $w_{ab}^{(ij), (t+1)}$, the $t$ refers to the step in gradient descent, $(ij)$ refers to the matrix $W_{ij}$ that the weight comes from and $ab$ refers to the matrix element, i.e. row $a$ and column $b$. This horrible tragedy of notational burden is 1) very annoying, 2) absolutely devoid of any insight. Sure we can compute this mess and maybe even elegantly but unlike sections I and II, there seem to be no nice backward chains here. To prepare a nice meal, one has to sometimes do a lot of "prep" i.e. preparation of ingredients and "pre-processing" them. Using mathematics to understand and gain insights is no different. So we'll take a nice de-tour to introduce the idea of **matrix derivatives**.
 
 ### Aside: Matrix derivatives
 
@@ -527,6 +551,10 @@ $\frac{\delta C}{\delta W_{ij}} = \begin{bmatrix}
 \vdots \\\
 \frac{\partial C}{\partial w_{m1}^{(ij)}} & \frac{\partial C}{\partial w_{m2}^{(ij)}} & \ldots & \frac{\partial C}{\partial w_{mn}^{(ij)}} \\\
 \end{bmatrix}$
+
+Our end goal is to deduce what rules such matrix derivatives would follow. To do so, we'll have to get our hands dirty but only once. Once the rules are derived, we can forget all the details and blindly differentiate expressions with matrices.
+
+Let's start with one of the terms in the cost function.
 
 #### Cost linear in weights
 
@@ -562,7 +590,7 @@ For our case,
 
 $C[A] = \underbrace{y^T}\_{(1,m)}\underbrace{A}\_{(m,n)}\underbrace{x}\_{(n,1)}$
 
-and $\text{dim}(C[A]): (1,1)$ i.e. it's just a number which is what we expected to get for the cost.
+and $\text{dim}(C[A]) = (1,1)$ i.e. it's just a number which is what we expected to get for the cost.
 
 Our notation for the cost:
 
@@ -583,9 +611,9 @@ $\frac{\partial C}{\partial a_{ij}}$
 
 we can update the elements of $A$:
 
-$a_{ij}^{t+1} = a_{ij}^{t} - \eta \frac{\partial C}{\partial a_{ij}^{t}}$
+$a_{ij}^{(t+1)} = a_{ij}^{(t)} - \eta \frac{\partial C}{\partial a_{ij}^{(t)}}$
 
-Instead let's try and combine the derivatives in a matrix:
+Instead let's combine the derivatives in a matrix:
 
 $\frac{\delta C}{\delta A} \equiv \begin{bmatrix}
 	\frac{\partial C}{\partial a_{11}} & \frac{\partial C}{\partial a_{12}} & \ldots & \frac{\partial C}{a_{1n}} \\\
@@ -598,11 +626,11 @@ where $\text{dim}(A) = \text{dim}(\frac{\delta C}{\delta A}) = (m,n)$
 
 We can then write:
 
-$A^{t+1} = A^{t} - \eta \frac{\delta C}{\delta A^t}$
+$A^{(t+1)} = A^{(t)} - \eta \frac{\delta C}{\delta A^{(t)}}$
 
 i.e. update the whole matrix in one go! Please note that the superscript $t$ is for the time-step NOT tranpose. For tranpose, we always use a *capital* T.
 
-We also know that $C$ is linear in the elements of $A$ (more exposition on this below) and so the derivatives should not depend on $A$ - just like the derivative of $f(x) = ax + b$ with respect to x, $\frac{df}{dx} = a$ doesn't depend on $x$. So, $\frac{\delta C}{\delta A}$ can only depend on $x,y$ and the only way to construct a matrix of dimension $(m,n)$ from $x$ and $y$ is 
+We also know that $C$ is linear in the elements of $A$ (more on this below) and so the derivatives should not depend on $A$ - just like the derivative of the linear function, $f(x) = ax + b$ with respect to x, $\frac{df}{dx} = a$ doesn't depend on $x$. So, $\frac{\delta C}{\delta A}$ can only depend on $x,y$ and the only way to construct a matrix of dimension $(m,n)$ from $x$ and $y$ is 
 
 $\underbrace{y}\_{(m,1)}\underbrace{x^T}\_{(1,n)} = \begin{bmatrix}
 y_1 \\\
@@ -645,7 +673,7 @@ $C[A] = \begin{bmatrix}
 	a_{21} x_1 + a_{22} x_2 + \ldots + a_{2n} x_n \\\
 	\ldots \\\
 	a_{m1} x_1 + a_{m2} x_2 + \ldots + a_{mn} x_n \\\
-\end{bmatrix} \\\ = (y_1 a_{11} x_1 + y_1 a_{12} x_2 + \ldots y_1 a_{1n} x_n) + (y_2 a_{21} x_1 + y_2 a_{22} x_2 + \ldots y_2 a_{2n} x_n) +  (y_m a_{m1} x_1 + y_m a_{m2} x_2 + \ldots y_m a_{mn} x_n)$
+\end{bmatrix} \\\ = (y_1 a_{11} x_1 + y_1 a_{12} x_2 + \ldots y_1 a_{1n} x_n) + (y_2 a_{21} x_1 + y_2 a_{22} x_2 + \ldots y_2 a_{2n} x_n) + \ldots + (y_m a_{m1} x_1 + y_m a_{m2} x_2 + \ldots y_m a_{mn} x_n)$
 
 If we look closely at the last line, all the terms are of the form $y_i a_{ij} x_j$ (which is exactly how one writes matrix multiplication). So, we could write this as:
 
@@ -667,7 +695,7 @@ Great! so we computed an explicit form of $C$ and now we want derivatives with r
 
 $\frac{\partial C}{\partial a_{kl}} = \frac{\partial}{\partial a_{kl}} [y_i a_{ij} x_j]$
 
-Some more notation. We define:
+We define:
 
 $\delta_{a,b} = \begin{cases}
 1, \text{if } a=b \\\
@@ -701,21 +729,13 @@ $\frac{\partial C}{\partial a_{kl}} = y_k x_l$
 
 which is exactly the $(k,l)$ element of $yx^T$. So we just showed through explicit calculation that:
 
-$\frac{\delta C}{\delta A} = y x^T$
+$$\boxed{C = y^T A x \implies \frac{\delta C}{\delta A} = y x^T}$$
 
 the same result we got earlier by looking at various dimensions.
 
-Phew! So all this work just to show that if:
+This can be used in gradient descent as:
 
-$C[A] = y^T A x$
-
-then, 
-
-$\frac{\delta C}{\delta A} = y x^T$
-
-which can be used in gradient descent as:
-
-$A^{t+1} = A^{t} - \eta \frac{\delta C}{\delta A^t}$
+$A^{(t+1)} = A^{(t)} - \eta \frac{\delta C}{\delta A^{(t)}} = A^{(t)} - \eta y x^T$
 
 Now (anticipating future use), what if 
 
@@ -745,9 +765,13 @@ From our previous result:
 
 $\frac{\delta C}{\delta B} = y' x^T = A^T y x^T$
 
+To summarized:
+
+$$\boxed{C = y^T A B x \implies \frac{\delta C}{\delta A}=y x^T B^T, \frac{\delta C}{\delta B} = A^T y x^T}$$
+
 #### Cost quadratic in weights
 
-Anticipating future use again, let's consider a quadratic cost function:
+The other term in our neural network cost function is a quadratic cost function:
 
 $C = \frac{1}{2} x^TA^TAx$
 
@@ -795,7 +819,7 @@ $\frac{\partial C}{\partial a_{cd}} = (Ax)\_{c} x_d = (Axx^T)\_{cd}$
 
 In other words, we just showed that:
 
-$\frac{\delta C}{\delta A} = Ax x^T$.
+$$\boxed{C = \frac{1}{2}x^TA^TAx \implies \frac{\delta C}{\delta A} = Ax x^T}$$
 
 We still have one more calculation to do that will be crucial for doing back-propagation on our multi-node neural network.
 
@@ -803,11 +827,12 @@ Suppose,
 
 $C = \frac{1}{2} x^T B^T A^T A B x$
 
+
 Calculating $\frac{\delta C}{\delta A}$ is easy given what we just calculated and we just need to replace $x \rightarrow B x$. So,
 
 $\frac{\delta C}{\delta A} = (ABx) (Bx)^T = (ABx)x^TB^T$
 
-But what about $\frac{\delta C}{\delta B}$? If we define $D = A^T A$ then we have
+But what about $\frac{\delta C}{\delta B}$? $B$ is sandwiched between $A$ and $x$ and can't be factored away. If we define $D = A^T A$ then we have
 
 $C = \frac{1}{2} x^T B^T D B x$
 
@@ -841,9 +866,9 @@ Linear in $B$:
 
 $\text{dim}(B) = (m,n)$
 
-So we can multiply $B$ on the right by something that is $(1,1)$ i.e. $x^Tx$ or $(n,n)$ i.e. $xx^T$ and on the left by something that is $(m,m)$ i.e. $A^TA$.
+So we can multiply $B$ on the right by something that is $(1,1)$ i.e. $x^Tx$ or $(n,n)$ i.e. $xx^T$ and on the left by something that is $(m,m)$ i.e. $A^TA$ and still maintain the dimensionality of $B$.
 
-Guess is:
+Our guess is:
 
 $\frac{\delta C}{\delta B} = (A^T A) B \begin{cases} 
 xx^T \\\
@@ -852,17 +877,9 @@ x^Tx \\\
 
 We also know that if we replace $D = A^T A$ by the $(m,m)$ identity matrix, we recover our previous example $C = \frac{1}{2} x^T B^T B x$ which gave us $\frac{\delta C}{\delta B} = B (xx^T)$ so we know $xx^T$ is the wrong choice to make.
 
-So, to summarize, if 
+To summarize, if 
 
-$C = \frac{1}{2} x^T B^T A^T A B x$
-
-then 
-
-$\frac{\delta C}{\delta A} = (ABx) (Bx)^T = (ABx)x^TB^T$
-
-and 
-
-$\frac{\delta C}{\delta B} = (A^T A) B (xx^T)$
+$$\boxed{C = \frac{1}{2} x^T B^T A^T A B x \implies \frac{\delta C}{\delta A} = (ABx) (Bx)^T, \frac{\delta C}{\delta B} = (A^T A) B (xx^T)}$$
 
 Of course, let's prove this by doing the explicit calculation using our powerful index notation:
 
@@ -874,7 +891,7 @@ Then,
 
 $[\frac{\delta C}{\delta B}]\_{cd} = \frac{1}{2} [x_i \frac{\partial b_{ji}}{\partial b_{cd}} d_{jk} b_{kl} x_l + x_i b_{ji} d_{jk} \frac{\partial b_{kl}}{\partial b_{cd}} x_l]$
 
-We now the derivatives above can only be $1$ when the indices match and otherwise they are $0$:
+The derivatives above can only be $1$ when the indices match and otherwise they are $0$:
 
 $\frac{\partial b_{kl}}{\partial b_{cd}} = \delta_{k,c} \delta_{l,d}$
 
@@ -886,9 +903,9 @@ All repeated indices are summed over and the $\delta$s pick out the correct inde
 
 $\delta_{a,b} x_b = \Sigma_{b=0}^{n} \delta_{a,b} x_b = \underbrace{\Sigma_{b\neq a} \underbrace{\delta_{a,b}}\_{= 0} x_b + \underbrace{\delta_{a,a}}\_{= 1} x_a}\_{\text{Separating terms where the index is a and not a}} = x_a$
 
-In other words if you see something like
+In other words if you see
 
-$\delta{a,b} x_b$
+$\delta_{a,b} x_b$
 
 read it as "wherever you see a $b$, replace it with an $a$ and remove the deltas"
 
@@ -896,7 +913,7 @@ and if you see
 
 $\delta(a,b)\delta(c,d) x_b y_d$
 
-read it as "wherever you see a $b$, replace it with $a and wherever you see $d$, replace it with $c$ and remove the deltas".
+read it as "wherever you see a $b$, replace it with $a$ and wherever you see $d$, replace it with $c$ and remove the deltas".
 
 Using this, we get
 
@@ -920,25 +937,15 @@ $\frac{\delta C}{\delta B}] = (DBxx^T) = (A^TA)B(xx^T)$
 
 That's it! I promise that's the end of index manipulation exercises for this section. We'll now collect all our results and use them to show that we still get backward chains as before.
 
-$C = y^TAx$:
+$$\boxed{C = y^TAx \implies \frac{\delta C}{\delta A} = yx^T}\label{linearnoactA}$$
 
-$\frac{\delta C}{\delta A} = yx^T$
+$$\boxed{C = y^TABx \implies \frac{\delta C}{\delta A} = yx^TB^T, \frac{\delta C}{\delta B} = A^Tyx^T}\label{linearnoactAB}$$
 
-$C = y^TABx$:
+$$\boxed{C = \frac{1}{2} x^TA^TAx \implies \frac{\delta C}{\delta A} = A(xx^T)}\label{quadraticnoactA}$$
 
-$\frac{\delta C}{\delta A} = yx^TB^T$
+$$\boxed{C = \frac{1}{2} x^TB^TA^TABx \implies \frac{\delta C}{\delta A} = AB(xx^T)B^T, \frac{\delta C}{\delta B} = (A^TA) B (xx^T)}\label{quadraticnoactAB}$$
 
-$\frac{\delta C}{\delta B} = A^Tyx^T$
-
-$C = \frac{1}{2} x^TA^TAx$:
-
-$\frac{\delta C}{\delta A} = A(xx^T)$
-
-$C = \frac{1}{2} x^TB^TA^TABx$:
-
-$\frac{\delta C}{\delta A} = AB(xx^T)B^T$
-
-$\frac{\delta C}{\delta B} = (A^TA) B (xx^T)$
+### End of Aside on Matrix derivatives
 
 It's time to get back to our neural network and put all this together. To recap, our forward propagation was defined as:
 
@@ -954,19 +961,23 @@ $x_3 = W_{23}W_{12}W_{01}x_0$
 
 and the cost is:
 
-$$C[W_{01}, W_{12}, W_{23}] = \frac{1}{2}[x_3^Tx_3 - 2 y^Tx_3] = \frac{x_3^Ty}{2} - y^Tx_3 = \frac{1}{2}x_0^TW_{01}^TW_{12}^TW_{23}^TW_{23}W_{12}W_{01}x_0 - y^TW_{23}W_{12}W_{01}x_0$$
+$$C[W_{01}, W_{12}, W_{23}] = \frac{1}{2}[x_3^Tx_3 - 2 y^Tx_3] = \frac{x_3^Tx_3}{2} - y^Tx_3$$
 
-We can now use our catalog of matrix derivatives to calculate the 3 derivatives needed for gradient descent:
+Plugging in the expression for $x_3$, we get
 
-$\frac{\delta C}{\delta W_{01}}, \frac{\delta C}{\delta W_{12}}, \frac{\delta C}{\delta W_{23}}$
+$$C[W_{01}, W_{12}, W_{23}] = \frac{1}{2}x_0^TW_{01}^TW_{12}^TW_{23}^TW_{23}W_{12}W_{01}x_0 - y^TW_{23}W_{12}W_{01}x_0$$
+
+We can now use our catalog of matrix derivatives to calculate the 3 derivatives needed for gradient descent: $\frac{\delta C}{\delta W_{01}}, \frac{\delta C}{\delta W_{12}}, \frac{\delta C}{\delta W_{23}}$
 
 $\frac{\delta C}{\delta W_{01}}$:
 
-Let's define $D \equiv W_{23}W_{12}$ to give:
+Let's define $D \equiv W_{23}W_{12}$ to get:
 
-$C = \frac{1}{2} x_0^T W_{01}^T D^T D W_{01} x_0 - y^T E W_{01} x_0$
+$C = \frac{1}{2}x_0^TW_{01}^T\underbrace{W_{12}^TW_{23}^T}\_{D^T}\underbrace{W_{23}W_{12}}\_{D}W_{01}x_0 - y^T\underbrace{W_{23}W_{12}}\_{D}W_{01}x_0$
 
-Then, using identities REF AND REF (tool tips?):
+$C = \frac{1}{2} x_0^T W_{01}^T D^T D W_{01} x_0 - y^T D W_{01} x_0$
+
+Then, using identities $\ref{quadraticnoactAB}$ AND $\ref{linearnoactAB}$:
 
 $\frac{\delta C}{\delta W_{01}} = \frac{\delta}{\delta W_{01}} \frac{1}{2} x_0^T W_{01}^T D^T D W_{01} x_0 - \frac{\delta}{\delta W_{01}} y^T D W_{01} x_0 = (D^TD)W_{01}(x_0x_0^T) - D^T y x_0^T$
 
@@ -976,33 +987,39 @@ $\frac{\delta C}{\delta W_{01}} = W_{12}^TW_{23}^T(W_{23}W_{12}W_{01}x_0)x_0^T -
 
 But, $W_{23}W_{12}W_{01}x_0$ is precisely $x_3$, the result of forward propagation. So, we get a very nice result:
 
-$\frac{\delta C}{\delta W_{01}} = W_{12}^TW_{23}^T(x_3-y)x_0^T$
+$$\boxed{\frac{\delta C}{\delta W_{01}} = W_{12}^TW_{23}^T(x_3-y)x_0^T}$$
 
-NOTE about dependence on $x_3-y$
+Note that the combination $x_3-y$ shows up again and if the prediction is exactly correct i.e. if $x_3 = y$, then the derivative is 0 and there's no correction via gradient descent, as one would expect.
 
 $\frac{\delta C}{\delta W_{12}}$:
 
 Define $u \equiv W_{01}x_0$ to get:
 
+$C = \frac{1}{2} \underbrace{x_0^TW_{01}^T}\_{u^T} W_{12}^TW_{23}^TW_{23}W_{12} \underbrace{W_{01}x_0}\_{u} - y^TW_{23}W_{12}\underbrace{W_{01}x_0}\_{u}$
+
 $C = \frac{1}{2}u^TW_{12}^TW_{23}^TW_{23}W_{12}u - y^TW_{23}W_{12}u$
 
-Using identities REF and REF (tooltips), we get:
+Using identities $\ref{quadraticnoactAB}$ AND $\ref{linearnoactAB}$, we get:
 
 $\frac{\delta C}{\delta W_{01}} = W_{23}^TW_{23}W_{12}uu^T - W_{23}^Tyu^T$
 
 Replacing $u = W_{01}x_0$,
 
-$\frac{\delta C}{\delta W_{12}} = W_{23}^TW_{23}W_{12}W_{01}x_0x_0^TW_{01}^T - W_{23}^Tyx_0^TW_{01}^T = W_{23}^Tx_3x_1^T - W_{23}^Tyx_1^T = W_{23}^T(x_3-y)x_1^T$
+$$\frac{\delta C}{\delta W_{12}} = W_{23}^TW_{23}W_{12}W_{01}x_0x_0^TW_{01}^T - W_{23}^Tyx_0^TW_{01}^T = W_{23}^Tx_3x_1^T - W_{23}^Tyx_1^T = W_{23}^T(x_3-y)x_1^T$$
+
+So, 
+
+$$\boxed{\frac{\delta C}{\delta W_{12}} = W_{23}^T(x_3-y)x_1^T}$$
 
 $\frac{\delta C}{\delta W_{23}}$:
 
 Define $D \equiv W_{12}W_{01}$ to get:
 
-$C = \frac{1}{2}x_0^TW_{01}^TW_{12}^TW_{23}^TW_{23}W_{12}W_{01}x_0 - y^TW_{23}W_{12}W_{01}x_0$
+$C = \frac{1}{2}x_0^T \underbrace{W_{01}^TW_{12}^T}\_{D^T} W_{23}^TW_{23}\underbrace{W_{12}W_{01}}\_{D}x_0 - y^TW_{23} \underbrace{W_{12}W_{01}}\_{D} x_0$
 
 $C = \frac{1}{2}x_0^TD^TW_{23}^TW_{23}Dx_0 - y^TW_{23}Dx_0$
 
-Using identities REF and REF (tooltips), we get:
+Using identities $\ref{quadraticnoactAB}$ AND $\ref{linearnoactAB}$, we get:
 
 $\frac{\delta C}{\delta W_{23}} = W_{23}D(x_0x_0^T)D^T - y^Tx_0^TD^T$
 
@@ -1012,11 +1029,11 @@ $\frac{\delta C}{\delta W_{23}} = W_{23}W_{12}W_{01}x_0x_0^TW_{01}^TW_{12}^T - y
 
 In summary:
 
-$\frac{\delta C}{\delta W_{01}} = W_{12}^TW_{23}^T(x_3-y)x_0^T$
+$$\boxed{\frac{\delta C}{\delta W_{01}} = W_{12}^TW_{23}^T(x_3-y)x_0^T}$$
 
-$\frac{\delta C}{\delta W_{12}} = W_{23}^T(x_3-y)x_1^T$
+$$\boxed{\frac{\delta C}{\delta W_{12}} = W_{23}^T(x_3-y)x_1^T}$$
 
-$\frac{\delta C}{\delta W_{23}} = (x_3-y)x_2^T$
+$$\boxed{\frac{\delta C}{\delta W_{23}} = (x_3-y)x_2^T}$$
 
 
 Presto!!! We again see forward and backward chains.
