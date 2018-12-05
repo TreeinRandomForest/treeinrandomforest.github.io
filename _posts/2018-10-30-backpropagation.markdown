@@ -765,7 +765,7 @@ From our previous result:
 
 $\frac{\delta C}{\delta B} = y' x^T = A^T y x^T$
 
-To summarized:
+To summarize:
 
 $$\boxed{C = y^T A B x \implies \frac{\delta C}{\delta A}=y x^T B^T, \frac{\delta C}{\delta B} = A^T y x^T}$$
 
@@ -877,7 +877,7 @@ x^Tx \\\
 
 We also know that if we replace $D = A^T A$ by the $(m,m)$ identity matrix, we recover our previous example $C = \frac{1}{2} x^T B^T B x$ which gave us $\frac{\delta C}{\delta B} = B (xx^T)$ so we know $xx^T$ is the wrong choice to make.
 
-To summarize, if 
+To summarize: 
 
 $$\boxed{C = \frac{1}{2} x^T B^T A^T A B x \implies \frac{\delta C}{\delta A} = (ABx) (Bx)^T, \frac{\delta C}{\delta B} = (A^T A) B (xx^T)}$$
 
@@ -945,6 +945,35 @@ $$\boxed{C = \frac{1}{2} x^TA^TAx \implies \frac{\delta C}{\delta A} = A(xx^T)}\
 
 $$\boxed{C = \frac{1}{2} x^TB^TA^TABx \implies \frac{\delta C}{\delta A} = AB(xx^T)B^T, \frac{\delta C}{\delta B} = (A^TA) B (xx^T)}\label{quadraticnoactAB}$$
 
+At this stage, we could declare victory because we have learned how to differentiate expression that occur in the cost for the feedforward neural network without worrying about indices. But, what we really want is rules that we can understand easily. We care mostly about equations $\ref{linearnoactAB}$ and $\ref{quadraticnoactAB}$. Why? Because generally our neural networks will have multiple layers with a matrix ($A, B$) for each layer-to-layer transition. 
+
+Let's focus on equation $\ref{linearnoactAB}$:
+
+$$C = y^TABx \implies \frac{\delta C}{\delta A} = yx^TB^T, \frac{\delta C}{\delta B} = A^Tyx^T$$ and on the $\frac{\delta C}{\delta A}$ term first.
+
+$\frac{\delta C}{\delta A} = \frac{\delta}{\delta A}(y^TABx) = \frac{\delta}{\delta A} (\underbrace{y^T}\_{\text{constant with respect to A}} A \underbrace{Bx}\_{\text{constant with respect to A}}) = yx^TB^T = (y^T)^T (Bx)^T$
+
+Now, if we were dealing with usual derivatives ($a,b$ are constants below):
+
+$\frac{d(a x b)}{dx} = \frac{d}{dx} (\underbrace{a}\_{\text{constant with respect to x}} x \underbrace{b}\_{\text{constant with respect to x}}) = a b$
+
+So, the derivative $\frac{d}{dx}$ simply let's $a$ and $b$ pass through.
+
+But it seems for our matrix derivative, the constants $y^T$ and $Bx$ pass through after being transposed. In other words, the derivative $\frac{\delta}{\delta A}$ will transpose any constant vector to give:
+
+$\frac{\delta}{\delta A}(y^TABx) = (y^T)^T \frac{\delta}{\delta A}(A Bx) = y \underbrace{\frac{\delta A}{\delta A}}\_{=1} (Bx)^T = y (Bx)^T = yx^TB^T$
+
+Also, note that unlike regular numbers where we can re-order the terms, $ab = ba$, this is generally not true for vectors and matrices $AB \neq BA$ and is sometimes not even defined given $\text{dim}(A)$ and $\text{dim}(B)$.
+
+We haven't proven this rules works in general so let's see if it works for $\frac{\delta C}{\delta B}$. If we transposed and passed through every constant vector and matrix, we would get:
+
+$\frac{\delta C}{\delta B} = \frac{\delta}{\delta B}(y^TABx) = (y^TA)^T\frac{\delta B}{\delta B}x^T = A^Tyx^T$ which is exactly what $\ref{linearnoactAB}$ says!
+
+So the central rules seems to be:
+
+* To differentiate an expression linear in the matrix we want to differentiate with respect to, pass through all constants but transpose them.
+
+We haven't proven this rule works in general but we'll constantly test this intuition.
 ### End of Aside on Matrix derivatives
 
 It's time to get back to our neural network and put all this together. To recap, our forward propagation was defined as:
