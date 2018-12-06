@@ -117,6 +117,7 @@ Some other assumptions/prerequisites/notes before we start:
 * Ideally, get a few sheets of paper, a pen and a quiet space and work through the calculations as you go along. Writing something out cements the material far more than just reading it.
 * Unfortunately I don't know how to show the details without mathematics. Please don't be turned off by unusual symbols - they are just strokes on a piece of paper or pixels on a screen. There is often a debate about the importance of mathematical content in machine learning and deep learning. While it is true that one doesn't need to know the mathematical details to apply many of these techniques (at least at a basic level) and that many papers use mathematics to obscure instead of illuminate concepts, mathematics gives a precise and beautiful understanding of what these algorithms are doing. It is still our most direct probe into complex systems and most of all, it is fun.
 * What you'll hopefully take away is that after all the fog clears, the simple act of calculating derivatives for this problem results in simple, iterative equations that let us train neural networks very efficiently.
+* There'll be a follow-up entry on *implementing* backpropagation from scratch and tweaks to gradient descent.
 * Lastly, backpropagation is probably deeply flawed. There are some big questions here - 1) do animal brains actually learn via a mechanism like backpropagation, 2) are there alternatives that lead to better solutions in far shorter amount of time and with small amounts of data, 3) what is the exact nature of the so-called cost landscape i.e. the behavior of the cost as a function of the weights. As you read the article below, I urge you to be bold and think of alternatives to backpropagation.
 
 
@@ -1087,29 +1088,13 @@ $\frac{\delta C}{\delta W_{i,i+1}} = \Delta_{2-i} x_i^T$
 
 In this notation, this is essentially the same as the results from sections I and II except for the fact that $x_i$ is now a vector and $\Delta_i$ is a matrix.
 
-## Backpropagation IV - non-linear activations + multi-node layers
+## Backpropagation IV (In Progress)- non-linear activations + multi-node layers
 
-Finally! We can now start building up the full backpropagation for a realistic feedforward neural network with multiple layers, each with multiple nodes and non-linear activations.
+Finally, the action begins! We can now start building up the full backpropagation for a realistic feedforward neural network with multiple layers, each with multiple nodes and non-linear activations.
 
 We'll use notation similar to section II.
 
 Forward propagation is:
-
-$p_0 = x_0$
-
-$q_0 = \sigma_0(x_0)$
-
-$p_1 = W_{01} q_0$
-
-$q_1 = \sigma_1(p_1)$
-
-$p_2 = W_{12} q_1$
-
-$q_2 = \sigma_2(p_2)$
-
-$p_3 = W_{23} q_2$
-
-$q_3 = \sigma_3(p_3)$
 
 $\begin{array}{ccc}
 p_0 = x_0 & q_0 = \sigma_0(x_0) \\\
@@ -1118,25 +1103,53 @@ p_2 = W_{12} q_1 & q_2 = \sigma_2(p_2) \\\
 p_3 = W_{23} q_2 & q_3 = \sigma_3(p_3) \\\
 \end{array}$
 
+where $W_{ij}$ are matrices and $p_i, q_i$ are vectors and all the dimensions are such that matrix multiplications are well-defined. $\sigma_i$ are activation functions and they act on vectors element-wise:
+
+$\sigma \begin{bmatrix}
+x_1 \\\
+x_2 \\\
+\vdots \\\
+x_n
+\end{bmatrix}
+= \begin{bmatrix}
+\sigma(x_1) \\\
+\sigma(x_2) \\\
+\vdots \\\
+\sigma(x_n) \\\
+\end{bmatrix}$
 
 To summarize:
 * $p_i$ and $q_i$ are always vectors.
 * $p_i$ is the "pre-activation" ("p" for "pre") input to a layer. 
 * $q_i$ is the "post-activation" ("q" since it comes after "p") output of a layer.
-* $W_{i,j}$ always takes $q_i \rightarrow p_j$.
+* $W_{ij}$ is a matrix that always takes $q_i \rightarrow p_j$.
 * $\sigma_i$ always takes $p_i \rightarrow q_i$.
 
-The last two rules pop out of our equations and while it's just notation, it serves as a powerful guide to ensure that we are not making mistakes. At any point in the calculation if you see the combination $W_{ij} p_i$, something is probably wrong. If we see, $W_{ij}p_k$ where $k\neq i,j$, again something is probably wrong.
+The last two rules pop out of our equations and while it's just notation, it serves as a powerful guide to ensure that we are not making mistakes. At any point in the calculation if you see the combination $W_{ij} p_i$, something is probably wrong. If we see $W_{ij}p_k$ where $k\neq i,j$, something is probably wrong.
 
-We'll use the mean-squared cost which is:
+As before, we'll use the mean-squared cost which is:
 
 $C[W_{01}, W_{12}, W_{23}] = \frac{1}{2} (q_3-y)^2$
 
-As before, we need matrix derivatives but with a twist introduced by the activation functions.
+For the purposes of optimization, we can expand:
+
+$C = \frac{1}{2} (q_3^Tq_3 - 2y^Tq_3)$
+
+so we get a term quadratic in $q_3$ ($\frac{1}{2} q_3^Tq_3$) and a term linear in $q_3$ ($y^Tq_3$). As in section III, we drop the constant (independent of $q_3$ and thus the weights) term $\frac{1}{2} y^Ty$.
+
+If we combined all the forward propagation equations, we get:
+
+$q_3 = \sigma_3(W_{23}\sigma_2(W_{12}\sigma_1(W_{01}\sigma_0(p_0))))$
+
+We need matrix derivatives but with a twist introduced by the activation functions. Since we already had some practice in Section III, let's dive straight in:
+
+### Aside: Matrix derivatives
+
+#### Cost linear in weights
 
 Let's start with a simpler cost that mimics the term linear in $q_3$:
 
-$C[A] = y^T \sigma(A) x$
+$C[A] = y^T \sigma(A x)$
 
 where the dimensions are:
 
@@ -1148,122 +1161,298 @@ $\text{dim}(A) = (m,n)$
 
 In other words:
 
-$C[A] = \underbrace{y^T}\_{(1,m)} \underbrace{\sigma(A)}\_{(m,n)} \underbrace{x}\_{(n,1)}$
+$C[A] = \underbrace{y^T}\_{(1,m)} \sigma(\underbrace{A}\_{(m,n)} \underbrace{x}\_{(n,1)})$
 
-We want to compute 
-
-$\frac{\delta C}{\delta A}$
+We want to compute $\frac{\delta C}{\delta A}$.
 
 We can try guessing what this should be based on the dimensions of the matrix. 
 
 * $\frac{\delta C}{\delta A}$ should be linear in $x$ and $y$ 
-* It should also depend on $\sigma'(A)$ where 
+* It should also depend on $\sigma'(Ax)$ where 
 
-$\sigma'(A) = \begin{bmatrix}
-\sigma'(a_{11}) & \sigma'(a_{12}) & \ldots & \sigma'(a_{1n}) \\\
-\sigma'(a_{21}) & \sigma'(a_{22}) & \ldots & \sigma'(a_{2n}) \\\
-\ldots \\\
-\sigma'(a_{m1}) & \sigma'(a_{m2}) & \ldots & \sigma'(a_{mn}) \\\
+$\sigma'(Ax) = \sigma'\begin{bmatrix}
+a_{11}x_1 + a_{12}x_2 + \ldots + a_{1n}x_n \\\
+a_{21}x_1 + a_{22}x_2 + \ldots + a_{2n}x_n \\\
+\vdots \\\
+a_{m1}x_1 + a_{m2}x_2 + \ldots + a_{mn}x_n \\\
+\end{bmatrix}
+=\begin{bmatrix}
+\sigma'(a_{11}x_1 + a_{12}x_2 + \ldots + a_{1n}x_n) \\\
+\sigma'(a_{21}x_1 + a_{22}x_2 + \ldots + a_{2n}x_n) \\\
+\vdots \\\
+\sigma'(a_{m1}x_1 + a_{m2}x_2 + \ldots + a_{mn}x_n) \\\
 \end{bmatrix}$
-
+with $\sigma'(x)$ denoting $\frac{d\sigma}{dx}$ ns a more compact notation.
 * $\text{dim}(\frac{\delta C}{\delta A}) = \text{dim}(A) = (m,n)$
 
-* Any guess we come up with should reduce to the special case $\frac{\delta C}{\delta A} = yx^T$ when $\sigma = id$, the identity function, $id(x) = x$.
+* Any guess we come up with should reduce to the special case $\frac{\delta C}{\delta A} = yx^T$ when $\sigma = id$, the identity function, $id(x) = x$, which is the result we derived in Section III.
 
-So we know that:
+Let's look at how we can combine these terms to get something with dimensions = $(m,n)$:
 
-$\frac{\delta C}{\delta A} = yx^T \bigodot \sigma'(A)$.
+* $y x^T$
+* $A$ but this shouldn't show up directly if we follow the intuition that the derivative of a linear function $f(x) = ax$ with respect to $a$ should be independent of $a$.
+* We can replace $y$ with $\sigma'(Ax)$ since $\text{dim}(Ax) = \text{dim}(\sigma(Ax)) = \text{dim}(\sigma'(Ax)) = \text{dim}(y) = (m,1)$ i.e. $Ax$ has the same dimensions as $y$ and acting with element-wise functions, whether $\sigma$ or $\sigma'$ doesn't change dimensions. So another option is $\sigma'(Ax) x^T$.
 
-where $\bigodot$ is a stand-in for something we need to do to combine $yx^T$ and $\sigma'(A)$. We can't just multiply the two matrices since the dimensions aren't consistent for multiplication, i.e. both these terms have dimension $(m,n)$.
+How do we combine both $yx^T$ and $\sigma'(Ax) x^T$ since both terms have the correct dimensions $(m,n)$ required for $\frac{\delta C}{\delta A}$ and we need the derivative to be linear in $y$ (requiring the first term) and it needs to contain $\sigma'(Ax)$ (requiring the second term).
 
-Also, if $\sigma = id$, then $\sigma(x) = x$ and $\sigma'(x) = 1$, then 
+Since we are unsure, let's explicitly calculate the derivative:
 
-$\sigma'(A) = \begin{bmatrix}
-1 & 1 & \ldots & 1 \\\
-1 & 1 & \ldots & 1 \\\
-\ldots \\\
-1 & 1 & \ldots & 1 \\\
+$C = y^T \sigma(Ax) = (y_1 y_2 \ldots y_m) \begin{bmatrix}
+\sigma(a_{11}x_1 + a_{12}x_2 + \ldots + a_{1n}x_n) \\\
+\sigma(a_{21}x_1 + a_{22}x_2 + \ldots + a_{2n}x_n) \\\
+\vdots \\\
+\sigma(a_{m1}x_1 + a_{m2}x_2 + \ldots + a_{mn}x_n) \\\
 \end{bmatrix}$
 
-i.e. the matrix consisting of only $1$s denoted by $U$.
+$C = y_1 \sigma(a_{11}x_1 + a_{12}x_2 + \ldots + a_{1n}x_n) + \\\ y_2 \sigma(a_{21}x_1 + a_{22}x_2 + \ldots + a_{2n}x_n) + \\\ \ldots + y_m \sigma(a_{m1}x_1 + a_{m2}x_2 + \ldots + a_{mn}x_n)$.
 
-In this case, we know that the derivative should reduce to:
+Differentiating with respect to $a_{kl}$, we get
 
-$\frac{\delta C}{\delta A} = yx^T \bigodot \sigma'(A) = yx^T \bigodot U = yx^T$.
+$\frac{\partial C}{\partial a_{kl}} = y_k \sigma'(a_{k1}x_1 + a_{k2} x_2 + \ldots a_{kn} x_n) x_l = y_k [\sigma'(Ax)]\_{k} x_l$
 
-So, for an arbitrary matrix $M$, we know now
+where $[\sigma'(Ax)]\_{k}$ denotes the $k$th element of $\sigma'(Ax)$
 
-$M \bigodot U = A$
+Contrast this to what we got in Section III without activation functions. There the same exact derivative gave us $y_k x_l$. The fact that we see a term $y_k [\sigma'(Ax)]\_{k}$ tells us that we need to define an element-wise multiplication operation:
 
-where $\text{dim}(M) = \text{dim}(U) = 1$.
+$$x \odot y$$
 
-Now, we can guess what the operation $\bigodot$ does and then confirm our guess:
+that takes two vectors of the same dimensions and just multiplies the corresponding elements together:
 
-Given two matrices $A, B$ with the same dimensions, it seems
-
-$(A\bigodot B)\_{ij} = a_{ij} b_{ij}$
-
-or more explicitly
-
-$\begin{bmatrix}
-a_{11} & a_{12} & \ldots & a_{1n} \\\
-a_{21} & a_{22} & \ldots & a_{2n} \\\
+$$x \odot y = \begin{bmatrix}
+x_1 \\\
+x_2 \\\
 \ldots \\\
-a_{m1} & a_{m2} & \ldots & a_{mn} \\\
-\end{bmatrix}
-\bigodot
+x_n
+\end{bmatrix} \odot
 \begin{bmatrix}
-b_{11} & b_{12} & \ldots & b_{1n} \\\
-b_{21} & b_{22} & \ldots & b_{2n} \\\
+y_1 \\\
+y_2 \\\
 \ldots \\\
-b_{m1} & b_{m2} & \ldots & b_{mn} \\\
-\end{bmatrix}
-= \begin{bmatrix}
-a_{11}b_{11} & a_{12}b_{12} & \ldots & a_{1n}b_{1n} \\\
-a_{21}b_{21} & a_{22}b_{22} & \ldots & a_{2n}b_{2n} \\\
+y_n
+\end{bmatrix} = \begin{bmatrix}
+x_1 y_1 \\\
+x_2 y_2 \\\
 \ldots \\\
-a_{m1}b_{m1} & a_{m2}b_{m2} & \ldots & a_{mn}b_{mn} \\\
+x_n y_n
+\end{bmatrix}$$
+
+It looks like a weird operation but just pops out of our calculation. Using this notation, we just showed
+
+$$\frac{\partial C}{\partial a_{kl}} = [y \odot\sigma'(Ax)]_k x_l$$
+
+and 
+
+$$\boxed{\frac{\delta C}{\delta A} = [y \odot \sigma'(Ax)] x^T}$$
+
+which combines both the terms we guessed we needed, $yx^T$ and $\sigma'(Ax)x^T$ using a new operation.
+
+Time for a sanity check. If there was no activation function or more formally, if the activation function was the identity function $\sigma(x) = id(x) = x$, then we expect to recover $yx^T$. Let's see if this is the case.
+
+If $\sigma(x) = id(x) = x$, then $\sigma'(x) = id'(x) = 1$, no matter what $x$ is. This would give:
+
+$\sigma'(Ax) = \begin{bmatrix}
+1 \\\
+1 \\\
+\vdots \\\
+1 \\\
 \end{bmatrix}$
 
-So if all $b_{ij}=$, then we recover $A$ as expected. While we are still not quite sure if this is correct, our guess is:
+and $y \odot \sigma'(Ax) = y \odot \begin{bmatrix}
+1 \\\
+1 \\\
+\vdots \\\
+1 \\\
+\end{bmatrix} = \begin{bmatrix}
+y_1\*1 \\\
+y_2\*1 \\\
+\vdots \\\
+y_m \*1 \\\
+\end{bmatrix} = y$
 
-$\frac{\delta C}{\delta A} = yx^T \bigodot \sigma'(A)$
+So, we would get:
 
-where $(A \bigodot B)\_{ij} = a_{ij} b_{ij}$.
+$$\frac{\delta C}{\delta A} = [y \odot \sigma'(Ax)] x^T = y x^T$$ 
 
-Let's confirm this with a more detailed calculation using the Einstein index notation:
+which is what we expected.
 
-$C = y_i \sigma(a_{ij}) x_j$
+We need to now develop some intuition to see what these derivatives would look like if the matrix $A$ was nested the way forward propagation nests weight matrices. In other words, what if 
 
-NEED TO CLEAR NOTATION
+$$C = y^T \sigma_2(A\sigma_1(B x))$$
 
-$\frac{\partial C}{\partial a_{kl}} = y_i x_j \sigma'(a_{ij}) \frac{\partial a_{ij}}{\partial a_{kl}} = y_k x_l \sigma'(a_{kl})$
-
-$\frac{\partial C}{\partial a_{kl}} = [\frac{\delta C}{\delta A}]\_{kl} = y_k x_l \sigma'(a_{kl}) = (yx^T)\_{kl} \sigma'(a_{kl}) = [yx^T \bigodot \sigma'(A)]\_{kl}$
-
-i.e.
-
-$\frac{\delta C}{\delta A} = yx^T \bigodot \sigma'(A)$
-
-as claimed before.
-
-Anticipating future use, consider
-
-$C = y^T \sigma_1(A \sigma_2(B)) x$
-
-and the derivatives
-
-$\frac{\delta C}{\delta A}, \frac{\delta C}{\delta B}$
+We now have two derivatives: $\frac{\delta C}{\delta A}, \frac{\delta C}{\delta B}$.
 
 $\frac{\delta C}{\delta A}$:
 
+This is the easier one. Define $q = \sigma_1(Bx)$ to give:
+
+$C = y^T \sigma_2(A\underbrace{\sigma_1(B x)}\_{q}) = y^T \sigma_2(Aq)$
+
+From our previous calculation, we know
+
+$\frac{\delta C}{\delta A} = [y \odot \sigma_2'(Aq)]q^T = \boxed{[y \odot \sigma_2'(A\sigma_1(Bx))] \sigma_1(Bx)^T}$
+
+Recall from section III that we guessed a rule that a matrix derivative transposes every constant vector it sees. The same phenomenon occurs here too. Let's see it step by step:
+
+$\frac{\delta C}{\delta A} = \frac{\delta}{\delta A} (y^T \sigma_2(A\sigma_1(B x)))$
+
+$\frac{\delta C}{\delta A} = y \frac{\delta}{\delta A}(\sigma_2(A\sigma_1(B x)))$
+
+Now, using the chain rule, we get $\sigma_2'$ and a preceding $\odot$:
+
+$\frac{\delta C}{\delta A} = y \odot \sigma_2'(A\sigma_1(B x)) \frac{\delta}{\delta A}(A\sigma_1(B x))$
+
+Since, $\sigma_1(Bx)$ is a constant with respect to $A$, it has to get transposed.
+
+$\frac{\delta C}{\delta A} = y \odot \sigma_2'(A\sigma_1(B x)) \frac{\delta}{\delta A}(A) (\sigma_1(B x))^T$
+
+Using $\frac{\delta A}{\delta A} = 1$, we get our final answer:
+
+$\frac{\delta C}{\delta A} = [y \odot \sigma_2'(A\sigma_1(B x)] \sigma_1(B x)^T$
+
+That's great! Now we only need to follow these rules and not worry about the details of what goes on underneath.
+
+Let's see if we can apply these rules to guess what $\frac{\delta C}{\delta B}$ should look like and then we'll explicitly compute it:
+
+**Using imputed rules**:
+
+$\frac{\delta C}{\delta B} = \frac{\delta}{\delta B} (y^T \sigma_2(A\sigma_1(B x)))$
+
+Tranpose "constant" vector $y$:
+
+$\frac{\delta C}{\delta B} = y \frac{\delta}{\delta B} (\sigma_2(A\sigma_1(B x)))$
+
+Apply chain rule i.e. differentiate the function and put $\odot$ before it:
+
+$\frac{\delta C}{\delta B} = [y \odot \sigma_2'(A\sigma_1(Bx))] \frac{\delta}{\delta B} (A\sigma_1(Bx))$
+
+Tranpose constant matrix $A$:
+
+$\frac{\delta C}{\delta B} = [y \odot \sigma_2'(A\sigma_1(Bx))] A^T \frac{\delta}{\delta B} (\sigma_1(Bx))$
+
+Use chain rule again:
+
+$\frac{\delta C}{\delta B} = [y \odot \sigma_2'(A\sigma_1(Bx))] A^T \odot \sigma_1'(Bx) \frac{\delta}{\delta B} (B x)$
+
+Transpose "constant" vector $x$:
+
+$\frac{\delta C}{\delta B} = [y \odot \sigma_2'(A\sigma_1(Bx))] A^T \odot \sigma_1'(Bx) \frac{\delta}{\delta B} (B) x^T$
+
+Use $\frac{\delta B}{\delta B} = 1$,
+
+$\frac{\delta C}{\delta B} = [y \odot \sigma_2'(A\sigma_1(Bx))] A^T \odot \sigma_1'(Bx) x^T$
+
+The big question now is if this is correct?
+
+Let's check if the dimensions work out.
+
+$$C = \underbrace{y^T}_{(1,k)} \sigma_2(\underbrace{A}_{(k,m)}\sigma_1(\underbrace{B}_{(m,n)} \underbrace{x}_{(n,1)}))$$
+
+So $\text{dim}(y) = \text{dim}(\sigma_2'(A\sigma_1(Bx))) = (k,1)$ and $y \odot \sigma_2'(A\sigma_1(Bx))$ is well-defined.
+
+This term is then multiplied by $A^T$ on the right i.e.:
+
+$[y \odot \sigma_2'(A\sigma_1(Bx))] A^T$
+
+Oops! this is not well-defined! $\text{dim}(A^T) = (m,k)$ so we have a multiplication of the form $(k,1)(m,k)$. 
+
+Let's see if we can salvage this (don't worry, we'll confirm all our guesses with explicit calculations below). While $(k,1)(m,k)$ is not well-defined, $(m,k)(k,1)$ is. So, maybe the rule is that the $A^T$ should be tacked on in front of everything to its left i.e.
+
+$\frac{\delta C}{\delta B} = A^T [y \odot \sigma_2'(A\sigma_1(Bx))] \frac{\delta}{\delta B} (\sigma_1(Bx))$
+
+Does this weird rule make sense? Of course! Imagine we had
+
+$\frac{\delta }{\delta A} (y^T B^T A x)$
+
+We can view this in two ways. The first one is to treat one term at a time:
+
+$\frac{\delta }{\delta A} (y^T B^T A x) = y \frac{\delta }{\delta A} (B^T A x) = y B \frac{\delta }{\delta A} (Ax) = y B x^T$
+
+The second one is to realize that $y^T B^T$ is a constant term and can be grouped together:
+
+$\frac{\delta }{\delta A} (y^T B^T A x) = (y^T B^T)^T \frac{\delta }{\delta A} (A x) = Byx^T$
+
+Now we see the problem. When we treat one term at a time, we are transposing constant terms but $(AB)^T \neq A^T B^T$. Instead it is $B^T A^T$. So, every time we see a constant term, we need to transpose it AND tack it on the left of everything.
+
+$\frac{\delta }{\delta A} (y^T B^T A x) = y \frac{\delta }{\delta A} (B^T A x) = {\color{red} {B y}} \frac{\delta }{\delta A} (Ax) = y B x^T$
+
+Going back to our original calculation:
+
+$\frac{\delta C}{\delta B} = \frac{\delta}{\delta B} (y^T \sigma_2(A\sigma_1(B x)))$
+
+Tranpose "constant" vector $y$:
+
+$\frac{\delta C}{\delta B} = y \frac{\delta}{\delta B} (\sigma_2(A\sigma_1(B x)))$
+
+Apply chain rule i.e. differentiate the function and put $\odot$ before it:
+
+$\frac{\delta C}{\delta B} = [y \odot \sigma_2'(A\sigma_1(Bx))] \frac{\delta}{\delta B} (A\sigma_1(Bx))$
+
+Tranpose constant matrix $A$ AND put it to the left of the previous term:
+
+$\frac{\delta C}{\delta B} = A^T [y \odot \sigma_2'(A\sigma_1(Bx))] \frac{\delta}{\delta B} (\sigma_1(Bx))$
+
+Use chain rule again:
+
+$\frac{\delta C}{\delta B} = A^T [y \odot \sigma_2'(A\sigma_1(Bx))] \odot \sigma_1'(Bx) \frac{\delta}{\delta B} (B x)$
+
+Transpose "constant" vector $x$:
+
+$\frac{\delta C}{\delta B} = A^T [y \odot \sigma_2'(A\sigma_1(Bx))] \odot \sigma_1'(Bx) \frac{\delta}{\delta B} (B) x^T$
+
+Use $\frac{\delta B}{\delta B} = 1$,
+
+$$\boxed{\frac{\delta C}{\delta B} = \{[A^T [y \odot \sigma_2'(A\sigma_1(Bx))] \odot \sigma_1'(Bx)\} x^T}$$
+
+Now all the dimensions are well-defined:
+
+$\text{dim}[A^T [y \odot \sigma_2'(A\sigma_1(Bx))]] = (m,1)$
+
+$\text{dim} [\sigma_1'(Bx)] = (m,1)$
+
+So, $\text{dim} [A^T [y \odot \sigma_2'(A\sigma_1(Bx))] \odot \sigma_1'(Bx)] = (m,1)$
+
+and $\text{dim}(x^T) = (1,n)$ 
+
+to give:
+
+$\text{dim}(\frac{\delta C}{\delta B}) = (m,n) = \text{dim}(B)$!
+
+Let's also check that if $\sigma_1 = id$, we basically recover the previous case using $\sigma'(x) = 1$ and $\odot$ing with a vector of $1$s gives the original vector back:
+
+$\frac{\delta C}{\delta B} = A^T [y \odot \sigma_2'(A\sigma_1(Bx))] x^T = A^T [y \odot \sigma_2'(ABx)] x^T$
+
+If $A = I$, the identity matrix (diagonals are $1$ and everything else is $0$), we get:
+
+$\frac{\delta C}{\delta B} = y \odot \sigma_2'(Bx)] x^T$
+
+as expected.
+
+We have another (ugly) way of confirming this calculation and while it's not pretty, we have to confirm as many ways as we can:
+
+**Explicit calculation**
+
+$C = y^T \sigma_2(A\sigma_1(B x))$
+
+#### Cost quadratic in weights
+
+Let's start with a simple quadratic cost:
+
+$C = \frac{1}{2} \sigma(x^TA^T)\sigma(Ax)$
+
+We have done most of the hard work above. Let's now compute the derivative using both our imputed rules and explicitly to ensure they match.
+
+**Imputed Rules**
+
+$\frac{\delta C}{\delta A} = \frac{\delta}{\delta A} [\frac{1}{2} \sigma(x^TA^T)\sigma(Ax)]$
 
 
 
-Testing collapsible markdown
+$\frac{\delta C}{\delta A} = \frac{1}{2} [\frac{\delta \sigma(x^TA^T)}{\delta A}\sigma(Ax) + \sigma(x^TA^T)\frac{\delta \sigma(xA)}{\delta A}]$
 
-<details>
-	<summary>Expand</summary>
-	
-	Stuff goes here
-	</details>
+The two derivatives are equal since the terms are just transposed. We can combine them and get rid of the factor of $\frac{1}{2}$:
+
+$\frac{\delta C}{\delta A} = \sigma(x^TA^T)\frac{\delta \sigma(xA)}{\delta A}$
+
+
+### End of Aside on Matrix derivatives
+
