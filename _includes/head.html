@@ -10,6 +10,35 @@
   <link rel="canonical" href="{{ page.url | replace:'index.html','' | prepend: site.baseurl | prepend: site.url }}">
   <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ "/feed.xml" | prepend: site.baseurl | prepend: site.url }}">
 
+<!--thanks to Davide Cervone-->
+<!--https://groups.google.com/forum/#!msg/mathjax-users/SXjY3rQXOzc/YGcc48HwDR4J-->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Register.StartupHook("TeX Jax Ready",function () {
+    var TEX = MathJax.InputJax.TeX,
+        MML = MathJax.ElementJax.mml;
+    var CheckDimen = function (dimen) {
+      if (dimen === "" ||
+          dimen.match(/^\s*([-+]?(\.\d+|\d+(\.\d*)?))\s*(pt|em|ex|mu|px|mm|cm|in|pc)\s*$/))
+              return dimen.replace(/ /g,"");
+      TEX.Error("Bad dimension for image: "+dimen);
+    };
+    TEX.Definitions.macros.img = "myImage";
+    TEX.Parse.Augment({
+      myImage: function (name) {
+        var src = this.GetArgument(name),
+            valign = CheckDimen(this.GetArgument(name)),
+            width  = CheckDimen(this.GetArgument(name)),
+            height = CheckDimen(this.GetArgument(name));
+        var def = {src:src};
+        if (valign) {def.valign = valign}
+        if (width)  {def.width  = width}
+        if (valign) {def.height = height}
+        this.Push(this.mmlToken(MML.mglyph().With(def)));
+      }
+    });
+  });
+  </script>
+
  <script type="text/x-mathjax-config"> MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "all" } } }); </script>
        <script type="text/x-mathjax-config">
          MathJax.Hub.Config({
