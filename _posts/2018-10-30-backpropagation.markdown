@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "A detailed look at backpropagation in feedforward neural networks"
+title:  "A Detailed Look at Backpropagation in Feedforward Neural Networks"
 date:   2018-10-30
 categories: [deep-learning]
 tags: [deep-learning]
