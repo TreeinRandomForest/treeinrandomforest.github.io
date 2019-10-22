@@ -6,8 +6,6 @@ categories: jekyll update
 mathjax: true
 ---
 
-When I first started writing this post, it was simply a sequence of calculations with the proof. While that is illuminating to the doer, and hopefully to anyone with some undergraduate math and physics, it sheds absolutely no light for anyone else. This is now my attempt at 
-
 Suppose we are given $$n$$ independent, identically distributed (i.i.d.) random variables $$Y_1, Y_2, \ldots, Y_n$$. We are interested in the distribution of 
 
 $$
@@ -86,10 +84,10 @@ $$
 
 as well as the central moments:
 $$
-\big<X^n\big>_c = \int dx\, (x-\mu)^n f(x)
+\big<X^n\big>\_c = \int dx\, (x-\mu)^n f(x)
 $$
 
-where $$\mu = \big<X\big>$$ is the first moment and assumed to be finite. Note that $$\big<X\big>_c = 0$$.
+where $$\mu = \big<X\big>$$ is the first moment and assumed to be finite. Note that $$\big<X\big>\_c = 0$$.
 
 On the other hand, suppose we are given all the moments. Can we compute $$f$$ then? The answer to this question is positive as shown below.
 
@@ -136,7 +134,7 @@ Define $$\tilde{g}(k) = e^{ik\mu}\tilde{f}(k)$$.
 $$
 \begin{split}
 \tilde{g}(k) & = \tilde{g}(0) + \frac{d\tilde{g}(0)}{dk}k + \frac{d^2\tilde{g}(0)}{dk^2}\frac{k^2}{2!} + \ldots + \frac{d^m\tilde{g}(0)}{dk^m}\frac{k^m}{m!} + \ldots \\
-& = \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>_c}{\sqrt{2\pi}} k - \frac{\big<X^2\big>_c}{\sqrt{2\pi}}\frac{k^2}{2!} + \ldots + \frac{(-i)^m\big<X^m\big>_c}{\sqrt{2\pi}}\frac{k^m}{m!} + \ldots
+& = \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>\_c}{\sqrt{2\pi}} k - \frac{\big<X^2\big>\_c}{\sqrt{2\pi}}\frac{k^2}{2!} + \ldots + \frac{(-i)^m\big<X^m\big>\_c}{\sqrt{2\pi}}\frac{k^m}{m!} + \ldots
 \end{split}
 $$
 
@@ -145,7 +143,7 @@ using $$\tilde{g}(0) = \tilde{f}(0) = \frac{1}{\sqrt{2\pi}}$$.
 Finally,
 
 $$
-\tilde{f}(k) = e^{-ik\mu} \big( \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>_c}{\sqrt{2\pi}} k - \frac{\big<X^2\big>_c}{\sqrt{2\pi}}\frac{k^2}{2!} + \ldots + \frac{(-i)^m\big<X^m\big>_c}{\sqrt{2\pi}}\frac{k^m}{m!} + \ldots \big)
+\tilde{f}(k) = e^{-ik\mu} \big( \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>\_c}{\sqrt{2\pi}} k - \frac{\big<X^2\big>\_c}{\sqrt{2\pi}}\frac{k^2}{2!} + \ldots + \frac{(-i)^m\big<X^m\big>\_c}{\sqrt{2\pi}}\frac{k^m}{m!} + \ldots \big)
 $$
 
 We will use central moments from here on but the same result can be derived by using the non-central moments. We can use this result in equation \ref{master}:
@@ -154,8 +152,8 @@ $$
 \begin{split}
 g(\bar{y}; n) & = \int\frac{dk}{2\pi} \, e^{ik\bar{y}} \big[\int{dy_1\, f(y_1) e^{-iky_1/n}}\big]^n \\
 & = \int\frac{dk}{2\pi} \, e^{ik\bar{y}} \big[\sqrt{2\pi}\tilde{f}(\frac{k}{n})\big]^n\\
-& = \int\frac{dk}{2\pi} \, e^{ik\bar{y}} \big[ e^{-ik\mu/n} \sqrt{2\pi}^n \big( \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>_c}{\sqrt{2\pi}} \frac{k}{n} - \frac{\big<X^2\big>_c}{\sqrt{2\pi}}\frac{1}{2!}(\frac{k}{n})^2 + \ldots + \frac{(-i)^m\big<X^m\big>_c}{\sqrt{2\pi}}\frac{1}{m!}\big(\frac{k}{n}\big)^m + \ldots \big)\big]^n \\
-& = \frac{1}{2\pi}\int dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>_c \frac{k}{n} - \frac{\big<X^2\big>_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>_c}{4!} (\frac{k}{n})^4 \ldots\big)^n
+& = \int\frac{dk}{2\pi} \, e^{ik\bar{y}} \big[ e^{-ik\mu/n} \sqrt{2\pi}^n \big( \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>\_c}{\sqrt{2\pi}} \frac{k}{n} - \frac{\big<X^2\big>\_c}{\sqrt{2\pi}}\frac{1}{2!}(\frac{k}{n})^2 + \ldots + \frac{(-i)^m\big<X^m\big>\_c}{\sqrt{2\pi}}\frac{1}{m!}\big(\frac{k}{n}\big)^m + \ldots \big)\big]^n \\
+& = \frac{1}{2\pi}\int dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>\_c \frac{k}{n} - \frac{\big<X^2\big>\_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>\_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>\_c}{4!} (\frac{k}{n})^4 \ldots\big)^n
 \end{split}
 $$
 
@@ -163,15 +161,14 @@ More precisely, we want the limit
 
 $$
 \begin{split}
-g(\bar{y}; n) & = \lim_{n\rightarrow\infty}\lim_{\Lambda\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>_c \frac{k}{n} - \frac{\big<X^2\big>_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
-& = \lim_{\Lambda\rightarrow\infty}\lim_{n\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>_c \frac{k}{n} - \frac{\big<X^2\big>_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
-& = \lim_{\Lambda\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} \lim_{n\rightarrow\infty} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>_c \frac{k}{n} - \frac{\big<X^2\big>_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
+g(\bar{y}; n) & = \lim_{n\rightarrow\infty}\lim_{\Lambda\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>\_c \frac{k}{n} - \frac{\big<X^2\big>\_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>\_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>\_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
+& = \lim_{\Lambda\rightarrow\infty}\lim_{n\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>\_c \frac{k}{n} - \frac{\big<X^2\big>\_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>\_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>\_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
+& = \lim_{\Lambda\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} \lim_{n\rightarrow\infty} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>\_c \frac{k}{n} - \frac{\big<X^2\big>\_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>\_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>\_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
 \end{split}
 $$
 
-In particular, $$\frac{k}{n}$$ can be made arbitrarily small this way. For large enough n, $$\frac{|k|}{n} < \frac{\Lambda}{n} \equiv \epsilon$$.
+In particular, $$\frac{k}{n}$$ can be made arbitrarily small this way. For large enough n, $$\frac{\|k\|}{n} < \frac{\Lambda}{n} \equiv \epsilon$$.
 
-(To be fixed above)
 Note, $$\big<X\big>_c = 0$$ and defining, $$\big<X^2\big>_c \equiv \sigma^2$$.
 $$
 g(\bar{y}) = \frac{1}{2\pi} \int_{-\infty}^{\infty} dk\, e^{ik(\bar{y}-\mu)}\big[1 - \frac{\sigma^2}{2} (\frac{k}{n})^2+ \mathcal{O}((\frac{k}{n})^3)\big]^n 
