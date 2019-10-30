@@ -7,3 +7,5 @@ permalink: /about/
 <img src="/assets/general/redhat.jpg">
 
 Red Hatter  doing a random walk through computer systems and machine learning. 
+
+Email: treeinrandomforest@gmail.com
