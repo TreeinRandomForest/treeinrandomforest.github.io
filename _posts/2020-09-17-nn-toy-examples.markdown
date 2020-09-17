@@ -1,6 +1,10 @@
-
-ESTIMATED TOTAL MEMORY USAGE: 2700 MB (but peaks will hit ~20 GB)
-
+---
+layout: post
+title:  "Toy Examples to Understand Simple Neural Networks"
+date:   2020-09-17
+categories: jekyll update
+mathjax: true
+---
 
 ```python
 %load_ext autoreload
