@@ -6,11 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>The Happy Mathematician</title>
-  <meta name="description" content="">
+  <title>Neural Networks on Toy Examples: An Aid to Understanding</title>
+  <meta name="description" content="Continuing our trend of understanding neural networks from first principles, we would like to get an intuition for how exactly a simple network learns to pre...">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://treeinrandomforest.github.io/">
+  <link rel="canonical" href="http://treeinrandomforest.github.io/deep-learning/2019/02/12/neuralnets-simple-examples.html">
   <link rel="alternate" type="application/rss+xml" title="The Happy Mathematician" href="http://treeinrandomforest.github.io/feed.xml">
 
 <!--thanks to Davide Cervone-->
@@ -94,49 +94,23 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <div class="home">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
-  <h1 class="page-heading">Posts</h1>
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Neural Networks on Toy Examples: An Aid to Understanding</h1>
+    <p class="post-meta"><time datetime="2019-02-12T00:00:00-05:00" itemprop="datePublished">Feb 12, 2019</time></p>
+  </header>
+  
+  <div class="post-content" itemprop="articleBody">
+    <p>Continuing our trend of understanding neural networks from first principles, we would like to get an intuition for how exactly a simple network learns to predict. We’ll look at two simple problems - a binary classification problem and a 1-dimensional regression problem.</p>
 
-  <ul class="post-list">
-    
-      <li>
-        <span class="post-meta">Sep 17, 2020</span>
+<h1 id="classification">Classification</h1>
 
-        <h2>
-          <a class="post-link" href="/jekyll/update/2020/09/17/nn-toy-examples.html">Using Toy Examples to Understand Simple Neural Networks</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Oct 29, 2019</span>
+<p>Consider the simple dataset shown below. Each point is described by a 2-dimensional coordinate $(x,y)$. Points in the red center are labeled as class 0 and points in the green ring are labeled as class 1. We would like to train a <strong>classifier</strong> i.e. a statistical model that takes the $(x,y)$ point as an input and predict the probability $p$ of belonging to class 1. We can convert these probabilities $p$ to discrete classes 0 and 1 by picking a threshold $\delta$. If $p &gt; \delta$, we predict the class to be 1 and if $p \leq \delta$, we predict the class to be 0.</p>
 
-        <h2>
-          <a class="post-link" href="/jekyll/update/2019/10/29/interesting-integral.html">An Interesting Integral</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Oct 30, 2018</span>
+  </div>
 
-        <h2>
-          <a class="post-link" href="/deep-learning/2018/10/30/backpropagation.html">A Detailed Look at Backpropagation in Feedforward Neural Networks</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jun 18, 2018</span>
-
-        <h2>
-          <a class="post-link" href="/jekyll/update/2018/06/18/central-limit-theory.html">A Physicist's Proof of the Central Limit Theorem</a>
-        </h2>
-      </li>
-    
-  </ul>
-
-  <p class="rss-subscribe">subscribe <a href="/feed.xml">via RSS</a></p>
-
-</div>
+</article>
 
       </div>
     </div>

@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Using Toy Examples to Understand Simple Neural Networks"
-date:   2019-10-29 13:50:49 -0400
+date:   2020-09-17
 categories: jekyll update
 mathjax: true
 ---

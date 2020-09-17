@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Using Toy Examples to Understand Simple Neural Networks</title>
+  <meta name="description" content="%load_ext autoreload%autoreload 2%matplotlib inline">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://treeinrandomforest.github.io/jekyll/update/2019/10/29/nn-toy-examples.html">
+  <link rel="alternate" type="application/rss+xml" title="The Happy Mathematician" href="http://treeinrandomforest.github.io/feed.xml">
+
+<!--thanks to Davide Cervone-->
+<!--https://groups.google.com/forum/#!msg/mathjax-users/SXjY3rQXOzc/YGcc48HwDR4J-->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Register.StartupHook("TeX Jax Ready",function () {
+    var TEX = MathJax.InputJax.TeX,
+        MML = MathJax.ElementJax.mml;
+    var CheckDimen = function (dimen) {
+      if (dimen === "" ||
+          dimen.match(/^\s*([-+]?(\.\d+|\d+(\.\d*)?))\s*(pt|em|ex|mu|px|mm|cm|in|pc)\s*$/))
+              return dimen.replace(/ /g,"");
+      TEX.Error("Bad dimension for image: "+dimen);
+    };
+    TEX.Definitions.macros.img = "myImage";
+    TEX.Parse.Augment({
+      myImage: function (name) {
+        var src = this.GetArgument(name),
+            valign = CheckDimen(this.GetArgument(name)),
+            width  = CheckDimen(this.GetArgument(name)),
+            height = CheckDimen(this.GetArgument(name));
+        var def = {src:src};
+        if (valign) {def.valign = valign}
+        if (width)  {def.width  = width}
+        if (valign) {def.height = height}
+        this.Push(this.mmlToken(MML.mglyph().With(def)));
+      }
+    });
+  });
+  </script>
+
+ <script type="text/x-mathjax-config"> MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "all" } } }); </script>
+       <script type="text/x-mathjax-config">
+         MathJax.Hub.Config({
+           tex2jax: {
+             inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+             processEscapes: true
+           }
+         });
+       </script>
+       <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">The Happy Mathematician</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Using Toy Examples to Understand Simple Neural Networks</h1>
+    <p class="post-meta"><time datetime="2019-10-29T13:50:49-04:00" itemprop="datePublished">Oct 29, 2019</time></p>
+  </header>
+  
+  <div class="post-content" itemprop="articleBody">
+    <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">load_ext</span> <span class="n">autoreload</span>
+<span class="o">%</span><span class="n">autoreload</span> <span class="mi">2</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+<span class="kn">import</span> <span class="nn">torch.optim</span> <span class="k">as</span> <span class="n">optim</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pylab</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.neural_network</span> <span class="kn">import</span> <span class="n">MLPClassifier</span><span class="p">,</span> <span class="n">MLPRegressor</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s">"cuda:0"</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s">"cpu"</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cpu
+</code></pre></div></div>
+
+<h1 id="goals-of-this-notebook">Goals of this notebook</h1>
+
+<p>We want to introduce the basics of neural networks and deep learning. Modern deep learning is a huge field and it’s impossible to cover even all the significant developments in the last 5 years here. But the basics are straightforward.</p>
+
+<p>One big caveat: deep learning is a rapidly evolving field. There are new developments in neural network architectures, novel applications, better optimization techniques, theoretical results justifying why something works etc. daily. It’s a great opportunity to get involved if you find research interesting and there are great online communities (pytorch, fast.ai, paperswithcode, pysyft) that you should get involved with.</p>
+
+<p><strong>Note</strong>: Unlike the previous notebooks, this notebook has very few questions. You should study the code, tweak the data, the parameters, and poke the models to understand what’s going on.</p>
+
+<h2 id="syntheticartificial-datasets">Synthetic/Artificial Datasets</h2>
+
+<p>We covered the basics of neural networks in the lecture. We also saw applications to two synthetic datasets. The goal in this section is to replicate those results and get a feel for using pytorch.</p>
+
+<h3 id="classification">Classification</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">generate_binary_data</span><span class="p">(</span><span class="n">N_examples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_examples</span><span class="p">):</span>
+        <span class="c">#class = 0</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">()</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+        <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)])</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c">#class = 1</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">()</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+        <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)])</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">features</span><span class="p">,</span> <span class="n">target</span>    
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">features</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">generate_binary_data</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">plot_binary_data</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">features</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="mi">1</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'0'</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">features</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">1</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'g'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'1'</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'x'</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'y'</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plot_binary_data</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="output_10_0.png" alt="png" /></p>
+
+<p>We have two features here - x and y. There is a binary target variable that we need to predict. This is essentially the dataset from the logistic regression discussion. Logistic regression will not do well here given that the data is not linearly separable. Transforming the data so we have two features:</p>
+
+<script type="math/tex; mode=display">r^2  = x^2 + y^2</script>
+
+<p>and</p>
+
+<script type="math/tex; mode=display">\theta = \arctan(\frac{y}{x})</script>
+
+<p>would make it very easy to use logistic regression (or just a cut at $r = 2$) to separate the two classes but while it is easy for us to visualize the data and guess at the transformation, in high dimensions, we can’t follow the same process.</p>
+
+<p>Let’s implement a feed-forward neural network that takes the two features as input and predicts the probabiliy of being in class 1 as output.</p>
+
+<h4 id="architecture-definition">Architecture Definition</h4>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ClassifierNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span> <span class="c">#inherit from nn.Module to define your own architecture</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">N_inputs</span><span class="p">,</span> <span class="n">N_outputs</span><span class="p">,</span> <span class="n">N_hidden_layers</span><span class="p">,</span> <span class="n">N_hidden_nodes</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span> <span class="n">output_activation</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ClassifierNet</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_inputs</span> <span class="o">=</span> <span class="n">N_inputs</span> <span class="c">#2 in our case</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_outputs</span> <span class="o">=</span> <span class="n">N_outputs</span> <span class="c">#1 in our case but can be higher for multi-class classification</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_hidden_layers</span> <span class="o">=</span> <span class="n">N_hidden_layers</span> <span class="c">#we'll start by using one hidden layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_hidden_nodes</span> <span class="o">=</span> <span class="n">N_hidden_nodes</span> <span class="c">#number of nodes in each hidden layer - can extend to passing a list</span>
+        
+        <span class="c">#Define layers below - pytorch has a lot of layers pre-defined</span>
+        
+        <span class="c">#use nn.ModuleList or nn.DictList instead of [] or {} - more explanations below</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_list</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([])</span> <span class="c">#use just as a python list</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_hidden_layers</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">n</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layer_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">N_inputs</span><span class="p">,</span> <span class="n">N_hidden_nodes</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layer_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">N_hidden_nodes</span><span class="p">,</span> <span class="n">N_hidden_nodes</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">N_hidden_nodes</span><span class="p">,</span> <span class="n">N_outputs</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">activation</span> <span class="c">#activations at inner nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_activation</span> <span class="o">=</span> <span class="n">output_activation</span> <span class="c">#activation at last layer (depends on your problem)</span>
+        
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inp</span><span class="p">):</span>
+        <span class="s">'''
+        every neural net in pytorch has its own forward function
+        this function defines how data flows through the architecture from input to output i.e. the forward propagation part
+        '''</span>
+        
+        <span class="n">out</span> <span class="o">=</span> <span class="n">inp</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_list</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="c">#calls forward function for each layer (already implemented for us)</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="c">#non-linear activation</span>
+            
+        <span class="c">#pass activations through last/output layer</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_layer</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_activation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_activation</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="n">out</span>
+        
+        <span class="k">return</span> <span class="n">pred</span>
+</code></pre></div></div>
+
+<p>There are several ways of specifying a neural net architecture in pytorch. You can work at a high level of abstraction by just listing the layers that you want to getting into the fine details by constructing your own layers (as classes) that can be used in ClassifierNet above.</p>
+
+<p>How does pytorch work? When you define an architecture like the one above, pytorch constructs a graph (nodes and edges) where the nodes are operations on multi-indexed arrays (called tensors).</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N_inputs</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">N_outputs</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">N_hidden_layers</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_nodes</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="n">activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
+<span class="n">output_activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span> <span class="c">#we want one probability between 0-1</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">ClassifierNet</span><span class="p">(</span><span class="n">N_inputs</span><span class="p">,</span>
+                    <span class="n">N_outputs</span><span class="p">,</span>
+                    <span class="n">N_hidden_layers</span><span class="p">,</span>
+                    <span class="n">N_hidden_nodes</span><span class="p">,</span>
+                    <span class="n">activation</span><span class="p">,</span>
+                    <span class="n">output_activation</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h4 id="training">Training</h4>
+
+<p><strong>Loss function</strong></p>
+
+<p>We first need to pick our loss function. Like we binary classification problems (including logistic regression), we’ll use binary cross-entropy:</p>
+
+<script type="math/tex; mode=display">\text{Loss, } L = -\Sigma_{i=1}^{N} y_i \log(p_i) + (1-y_i) \log(1-p_i)</script>
+
+<p>where $y_i \in {0,1}$ are the labels and $p_i \in [0,1]$ are the probability predictions.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BCELoss</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#get a feel for the loss function</span>
+<span class="c">#target = 1 (label = 1)</span>
+<span class="k">print</span><span class="p">(</span><span class="n">criterion</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1e-2</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)))</span> <span class="c">#pred prob = 1e-2 -&gt; BAD</span>
+<span class="k">print</span><span class="p">(</span><span class="n">criterion</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.3</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)))</span> <span class="c">#pred prob = 0.3 -&gt; BAd</span>
+<span class="k">print</span><span class="p">(</span><span class="n">criterion</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)))</span> <span class="c">#pred prob = 0.5 -&gt; Bad</span>
+<span class="k">print</span><span class="p">(</span><span class="n">criterion</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.</span><span class="p">)))</span> <span class="c">#pred prob = 1.0 -&gt; GREAT!</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tensor(4.6052)
+tensor(1.2040)
+tensor(0.6931)
+tensor(0.)
+</code></pre></div></div>
+
+<p><strong>Optimizer</strong>:</p>
+
+<p>So we have the data, the neural net architecture, a loss function to measure how well the model does on our task. We also need a way to do gradient descent.</p>
+
+<p>Recall, we use gradient descent to minimize the loss by computing the first derivative (gradients) and taking a step in the direction opposite (since we are minimizing) to the gradient:</p>
+
+<script type="math/tex; mode=display">w_{t} \rightarrow w_{t} - \eta \frac{\partial L}{\partial w_{t-1}}</script>
+
+<p>where $w_t$ = weight at time-step t, $L$ = loss, $\eta$ = learning rate.</p>
+
+<p>For our neural network, we first need to calculate the gradients. Thankfully, this is done automatically by pytorch using a procedure called <strong>backpropagation</strong>. If you are interested in more calculations details, please check “automatic differentiation” and an analytical calculation for a feed-forward network (https://treeinrandomforest.github.io/deep-learning/2018/10/30/backpropagation.html).</p>
+
+<p>The gradients are calculated by calling a function <strong>backward</strong> on the network, as we’ll see below.</p>
+
+<p>Once the gradients are calculated, we need to update the weights. In practice, there are many heuristics/variants of the update step above that lead to better optimization behavior. A great resource to dive into details is https://ruder.io/optimizing-gradient-descent/. We won’t get into the details here.</p>
+
+<p>We’ll choose what’s called the <strong>Adam</strong> optimizer.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>We picked a constant learning rate here (which is adjusted internally by Adam) and also passed all the tunable weights in the network by using: net.parameters()</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">list</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[Parameter containing:
+ tensor([[ 0.1633, -0.6155],
+         [ 0.0300, -0.6257]], requires_grad=True), Parameter containing:
+ tensor([ 0.0674, -0.2066], requires_grad=True), Parameter containing:
+ tensor([[ 0.2191, -0.3275]], requires_grad=True), Parameter containing:
+ tensor([0.0155], requires_grad=True)]
+</code></pre></div></div>
+
+<p>There are 9 free parameters:</p>
+
+<ul>
+  <li>
+    <p>A 2x2 matrix (4 parameters) mapping the input layer to the 1 hidden layer.</p>
+  </li>
+  <li>
+    <p>A 2x1 matrix (2 parameters) mapping the hidden layer to the output layer with one node.</p>
+  </li>
+  <li>
+    <p>2 biases for the 2 nodes in the hidden layer.</p>
+  </li>
+  <li>
+    <p>1 bias for the output node in the output layer.</p>
+  </li>
+</ul>
+
+<p>This is a good place to explain why we need to use nn.ModuleList. If we had just used a vanilla python list, net.parameters() would only show weights that are explicitly defined in our net architecture. The weights and biases associated with the layers would NOT show up in net.parameters(). This process of a module higher up in the hierarchy (ClassifierNet) subsuming the weights and biases of modules lower in the hierarchy (layers) is called <strong>registering</strong>. ModuleList ensures that all the weights/biases are registered as weights and biases of ClassifierNet.</p>
+
+<p>Let’s combine all these elements and train our first neural net.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#convert features and target to torch tensors</span>
+<span class="n">features</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#if have gpu, throw the model, features and labels on it</span>
+<span class="n">net</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="nb">float</span><span class="p">()</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="nb">float</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>We need to do the following steps now:</p>
+
+<ul>
+  <li>
+    <p>Compute the gradients for our dataset.</p>
+  </li>
+  <li>
+    <p>Do gradient descent and update the weights.</p>
+  </li>
+  <li>
+    <p>Repeat till ??</p>
+  </li>
+</ul>
+
+<p>The problem is there’s no way of knowing when we have converged or are close to the minimum of the loss function. In practice, this means we keep repeating the process above and monitor the loss as well as performance on a hold-out set. When we start over-fitting on the training set, we stop. There are various modifications to this procedure but this is the essence of what we are doing.</p>
+
+<p>Each pass through the whole dataset is called an <strong>epoch</strong>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N_epochs</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_epochs</span><span class="p">):</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">features</span><span class="p">)</span> <span class="c">#make predictions on the inputs</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span> <span class="c">#compute loss on our predictions</span>
+    
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span> <span class="c">#set all gradients to 0</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span> <span class="c">#backprop to compute gradients</span>
+    <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span> <span class="c">#update the weights</span>
+    
+    <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s">'Loss = {loss:.4f}'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Loss = 0.6950
+Loss = 0.6935
+Loss = 0.6928
+Loss = 0.6920
+Loss = 0.6897
+Loss = 0.6838
+Loss = 0.6728
+Loss = 0.6561
+Loss = 0.6350
+Loss = 0.6111
+
+
+/home/sanjay/anaconda3/lib/python3.7/site-packages/torch/nn/functional.py:2016: UserWarning: Using a target size (torch.Size([2000])) that is different to the input size (torch.Size([2000, 1])) is deprecated. Please ensure they have the same size.
+  "Please ensure they have the same size.".format(target.size(), input.size()))
+</code></pre></div></div>
+
+<p>Let’s combined all these elements into a function</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">train_model</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="n">N_epochs</span><span class="p">,</span> <span class="n">criterion</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">BCELoss</span><span class="p">(),</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="c">#criterion = nn.BCELoss() #binary cross-entropy loss as before</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span> <span class="c">#Adam optimizer</span>
+
+    <span class="c">#if have gpu, throw the model, features and labels on it</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_epochs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">shuffle</span><span class="p">:</span> <span class="c">#should have no effect on gradients in this case</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">))</span>
+
+            <span class="n">features_shuffled</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+            <span class="n">target_shuffled</span> <span class="o">=</span> <span class="n">target</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">features_shuffled</span> <span class="o">=</span> <span class="n">features</span>
+            <span class="n">target_shuffled</span> <span class="o">=</span> <span class="n">target</span>
+
+        <span class="n">out</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">features_shuffled</span><span class="p">)</span>
+        <span class="c">#out = out.reshape(out.size(0))</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">target_shuffled</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s">'epoch = {epoch} loss = {loss}'</span><span class="p">)</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+    <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">features_shuffled</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+    <span class="n">pred</span><span class="p">[</span><span class="n">pred</span><span class="o">&gt;</span><span class="mf">0.5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">pred</span><span class="p">[</span><span class="n">pred</span><span class="o">&lt;=</span><span class="mf">0.5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#print(f'Accuracy = {accuracy}')</span>
+        
+    <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">'cpu'</span><span class="p">)</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">'cpu'</span><span class="p">)</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s">'cpu'</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span>
+</code></pre></div></div>
+
+<p><strong>Exercise</strong>: Train the model and vary the number of hidden nodes and see what happens to the loss. Can you explain this behavior?</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N_inputs</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">N_outputs</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_layers</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_nodes</span> <span class="o">=</span> <span class="mi">1</span> <span class="c">#&lt;--- play with this</span>
+<span class="n">activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
+<span class="n">output_activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span> <span class="c">#we want one probability between 0-1</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">ClassifierNet</span><span class="p">(</span><span class="n">N_inputs</span><span class="p">,</span>
+                    <span class="n">N_outputs</span><span class="p">,</span>
+                    <span class="n">N_hidden_layers</span><span class="p">,</span>
+                    <span class="n">N_hidden_nodes</span><span class="p">,</span>
+                    <span class="n">activation</span><span class="p">,</span>
+                    <span class="n">output_activation</span><span class="p">)</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/home/sanjay/anaconda3/lib/python3.7/site-packages/torch/nn/functional.py:2016: UserWarning: Using a target size (torch.Size([2000])) that is different to the input size (torch.Size([2000, 1])) is deprecated. Please ensure they have the same size.
+  "Please ensure they have the same size.".format(target.size(), input.size()))
+
+
+epoch = 0 loss = 0.7033640742301941
+epoch = 1000 loss = 0.6500650644302368
+epoch = 2000 loss = 0.6013957262039185
+epoch = 3000 loss = 0.5697730779647827
+epoch = 4000 loss = 0.5524778962135315
+epoch = 5000 loss = 0.5419368147850037
+epoch = 6000 loss = 0.5350810885429382
+epoch = 7000 loss = 0.5304193496704102
+epoch = 8000 loss = 0.5271337628364563
+epoch = 9000 loss = 0.5247564315795898
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N_inputs</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">N_outputs</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_layers</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_nodes</span> <span class="o">=</span> <span class="mi">2</span> <span class="c">#&lt;--- play with this</span>
+<span class="n">activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
+<span class="n">output_activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span> <span class="c">#we want one probability between 0-1</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">ClassifierNet</span><span class="p">(</span><span class="n">N_inputs</span><span class="p">,</span>
+                    <span class="n">N_outputs</span><span class="p">,</span>
+                    <span class="n">N_hidden_layers</span><span class="p">,</span>
+                    <span class="n">N_hidden_nodes</span><span class="p">,</span>
+                    <span class="n">activation</span><span class="p">,</span>
+                    <span class="n">output_activation</span><span class="p">)</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/home/sanjay/anaconda3/lib/python3.7/site-packages/torch/nn/functional.py:2016: UserWarning: Using a target size (torch.Size([2000])) that is different to the input size (torch.Size([2000, 1])) is deprecated. Please ensure they have the same size.
+  "Please ensure they have the same size.".format(target.size(), input.size()))
+
+
+epoch = 0 loss = 0.6919446587562561
+epoch = 1000 loss = 0.5212195515632629
+epoch = 2000 loss = 0.3851330280303955
+epoch = 3000 loss = 0.31723153591156006
+epoch = 4000 loss = 0.28128403425216675
+epoch = 5000 loss = 0.26127493381500244
+epoch = 6000 loss = 0.2497692108154297
+epoch = 7000 loss = 0.24297171831130981
+epoch = 8000 loss = 0.23883965611457825
+epoch = 9000 loss = 0.23625491559505463
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N_inputs</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">N_outputs</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_layers</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_nodes</span> <span class="o">=</span> <span class="mi">3</span> <span class="c">#&lt;--- play with this</span>
+<span class="n">activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
+<span class="n">output_activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span> <span class="c">#we want one probability between 0-1</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">ClassifierNet</span><span class="p">(</span><span class="n">N_inputs</span><span class="p">,</span>
+                    <span class="n">N_outputs</span><span class="p">,</span>
+                    <span class="n">N_hidden_layers</span><span class="p">,</span>
+                    <span class="n">N_hidden_nodes</span><span class="p">,</span>
+                    <span class="n">activation</span><span class="p">,</span>
+                    <span class="n">output_activation</span><span class="p">)</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/home/sanjay/anaconda3/lib/python3.7/site-packages/torch/nn/functional.py:2016: UserWarning: Using a target size (torch.Size([2000])) that is different to the input size (torch.Size([2000, 1])) is deprecated. Please ensure they have the same size.
+  "Please ensure they have the same size.".format(target.size(), input.size()))
+
+
+epoch = 0 loss = 0.7081694602966309
+epoch = 1000 loss = 0.5459635853767395
+epoch = 2000 loss = 0.3533243238925934
+epoch = 3000 loss = 0.24357181787490845
+epoch = 4000 loss = 0.17330381274223328
+epoch = 5000 loss = 0.12837183475494385
+epoch = 6000 loss = 0.09668248146772385
+epoch = 7000 loss = 0.07339806854724884
+epoch = 8000 loss = 0.05596068128943443
+epoch = 9000 loss = 0.0428055003285408
+</code></pre></div></div>
+
+<p>There seems to be some “magic” behavior when we increase the number of nodes in the first (and only) hidden layer from 2 to 3. Loss suddenly goes down dramatically. At this stage, we should explore why that’s happening.</p>
+
+<p>For every node in the hidden layer, we have a mapping from the input to that node:</p>
+
+<script type="math/tex; mode=display">\sigma(w_1 x + w_2 y + b)</script>
+
+<p>where $w_1, w_2, b$ are specific to that hidden node. We can plot the decision line in this case:</p>
+
+<script type="math/tex; mode=display">w_1 x + w_2 y + b = 0</script>
+
+<p>Unlike logistic regression, this is not actually a decision line. Points on one side are not classified as 0 and points on the other side as 1 (if the threshold = 0.5). Instead this line should be thought of as one defining a new coordinate-system. Instead of x and y coordinates, every hidden node induces a straight line and a new coordinate, say $\alpha_i$. So if we have 3 hidden nodes, we are mapping the 2-dimensional input space into a 3-dimensional space where the coordinates $\alpha_1, \alpha_2, \alpha_3$ for each point depend on which side of the 3 lines induced as mentioned above, it lies.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">print</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c">#3x2 matrix</span>
+<span class="k">print</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="c">#3 biases</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Parameter containing:
+tensor([[ 5.2196,  1.1068],
+        [-1.4413,  5.0452],
+        [ 2.7136,  4.4744]], requires_grad=True)
+Parameter containing:
+tensor([ 6.3830,  6.3193, -6.3807], requires_grad=True)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="c">#detach from pytorch computational graph, bring back to cpu, convert to numpy</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+
+<span class="c">#plot raw data</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">features</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="mi">1</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'0'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">features</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">1</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'g'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'1'</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'x'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'y'</span><span class="p">)</span>
+
+<span class="c">#get weights and biases</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">biases</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+<span class="c">#plot straight lines</span>
+<span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span> <span class="o">=</span> <span class="n">features</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="nb">min</span><span class="p">(),</span> <span class="n">features</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="nb">max</span><span class="p">()</span>
+<span class="n">y_lim_min</span><span class="p">,</span> <span class="n">y_lim_max</span> <span class="o">=</span> <span class="n">features</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="nb">min</span><span class="p">(),</span> <span class="n">features</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="nb">max</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span> <span class="c">#loop over each hidden node in the one hidden layer</span>
+    <span class="n">coef</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">intercept</span> <span class="o">=</span> <span class="n">biases</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    
+    <span class="n">y_min</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">intercept</span> <span class="o">-</span> <span class="n">coef</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">x_min</span><span class="p">)</span><span class="o">/</span><span class="n">coef</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">y_max</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">intercept</span> <span class="o">-</span> <span class="n">coef</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">x_max</span><span class="p">)</span><span class="o">/</span><span class="n">coef</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">],</span> <span class="p">[</span><span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span><span class="p">])</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">y_lim_min</span><span class="p">,</span> <span class="n">y_lim_max</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">framealpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;matplotlib.legend.Legend at 0x7efec54d0e10&gt;
+</code></pre></div></div>
+
+<p><img src="output_40_1.png" alt="png" /></p>
+
+<p>This is the plot we showed in the lecture. For every hidden node in the hidden layer, we have a straight line. The colors of the three lines above are orange, green and blue and that’s what we’ll call our new coordinates.</p>
+
+<p>Suppose you pick a point in the red region:</p>
+
+<ul>
+  <li>
+    <p>It lies to the <em>right</em> of the orange line</p>
+  </li>
+  <li>
+    <p>It lies to the <em>bottom</em> of the green line</p>
+  </li>
+  <li>
+    <p>It lies to the <em>top</em> of the blue line.</p>
+  </li>
+</ul>
+
+<p>(These directions might change because of inherent randomness during training - weight initializations here).</p>
+
+<p>On the other hand, we have <strong>6</strong> green regions. If you start walking clockwise from the top green section, every time you cross a straight line, you walk into a new region. Each time you walk into a new region, you flip the coordinate of one of the 3 lines. Either you go from <em>right</em> to <em>left</em> of the orange line, <em>bottom</em> to <em>top</em> of the green line or <em>top</em> to <em>bottom</em> of the blue line.</p>
+
+<p>So instead of describing each point by two coordinates (x, y), we can describe it by (orange status, green status, blue status). We happen to have 7 such regions here - with 1 being purely occupied by the red points and the other 7 by green points.</p>
+
+<p>This might be become cleared from a 3-dimensional plot.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">Axes3D</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#get hidden layer activations for all inputs</span>
+<span class="n">features_layer1_3d</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">layer_list</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">features</span><span class="p">)))</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[[9.9845624e-01 9.9989450e-01 1.4074607e-02]
+ [9.9999833e-01 2.1387354e-05 9.6282838e-07]
+ [9.9834836e-01 9.9822265e-01 1.7318923e-03]
+ [9.9999046e-01 3.4967636e-06 7.5046557e-08]
+ [9.9659330e-01 9.9793661e-01 9.2100969e-04]
+ [9.9999988e-01 1.0000000e+00 9.9999809e-01]
+ [9.9930000e-01 9.9877101e-01 4.2024595e-03]
+ [1.0000000e+00 3.8824263e-01 5.8628714e-01]
+ [9.9989605e-01 9.9991560e-01 1.0532016e-01]
+ [9.9947792e-01 1.0000000e+00 9.9986887e-01]]
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s">'3d'</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="mi">2</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'0'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="mi">2</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'g'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'1'</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">framealpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;matplotlib.legend.Legend at 0x7efec88a71d0&gt;
+</code></pre></div></div>
+
+<p><img src="output_44_1.png" alt="png" /></p>
+
+<p>At this stage, a simple linear classifier can draw a linear decision boundary (a plane) to separate the red points from the green points. Also, these points lie in the unit cube (cube with sides of length=1) since we are using sigmoid activations. Whenever the activations get saturated (close to 0 or 1), then we see points on the edges and corners of the cube.</p>
+
+<p><strong>Question</strong>: Switch the activation from sigmoid to relu (nn.ReLU()). Does the loss still essentially become zero on the train set? If not, try increasing N_hidden_nodes. At what point does the loss actually become close to 0?</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N_inputs</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">N_outputs</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_layers</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_nodes</span> <span class="o">=</span> <span class="mi">5</span> <span class="c">#&lt;---- play with this</span>
+<span class="c">#activation = nn.ReLU()</span>
+<span class="n">activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
+<span class="n">output_activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span> <span class="c">#we want one probability between 0-1</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">ClassifierNet</span><span class="p">(</span><span class="n">N_inputs</span><span class="p">,</span>
+                    <span class="n">N_outputs</span><span class="p">,</span>
+                    <span class="n">N_hidden_layers</span><span class="p">,</span>
+                    <span class="n">N_hidden_nodes</span><span class="p">,</span>
+                    <span class="n">activation</span><span class="p">,</span>
+                    <span class="n">output_activation</span><span class="p">)</span>
+
+<span class="n">features</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/home/sanjay/anaconda3/lib/python3.7/site-packages/torch/nn/functional.py:2016: UserWarning: Using a target size (torch.Size([2000])) that is different to the input size (torch.Size([2000, 1])) is deprecated. Please ensure they have the same size.
+  "Please ensure they have the same size.".format(target.size(), input.size()))
+
+
+epoch = 0 loss = 0.7076669931411743
+epoch = 1000 loss = 0.553517758846283
+epoch = 2000 loss = 0.27465084195137024
+epoch = 3000 loss = 0.1645623743534088
+epoch = 4000 loss = 0.10834519565105438
+epoch = 5000 loss = 0.04660164937376976
+epoch = 6000 loss = 0.023989887908101082
+epoch = 7000 loss = 0.01443599071353674
+epoch = 8000 loss = 0.009168545715510845
+epoch = 9000 loss = 0.005960268434137106
+</code></pre></div></div>
+
+<p><strong>Question</strong>: Remake the 3d plot but by trying 3 coordinates out of the N_hidden_nodes coordinates you found above?</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="c">#detach from pytorch computational graph, bring back to cpu, convert to numpy</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#get hidden layer activations for all inputs</span>
+<span class="n">features_layer1_3d</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">layer_list</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">features</span><span class="p">)))</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s">'3d'</span><span class="p">)</span>
+
+<span class="n">COORD1</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">COORD2</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">COORD3</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'0'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'g'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'1'</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">framealpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[[9.9377936e-01 9.2319959e-01 8.7263491e-03 1.7380387e-02 1.1155513e-03]
+ [9.9999964e-01 1.0000000e+00 9.6943337e-01 8.0663117e-04 9.9992502e-01]
+ [9.9584806e-01 9.9378949e-01 3.6382474e-02 4.6425248e-03 6.0711484e-03]
+ [9.9999869e-01 1.0000000e+00 9.9233890e-01 8.1121820e-05 9.9993217e-01]
+ [9.9195743e-01 9.9422026e-01 4.7694847e-02 2.3190679e-03 4.3324153e-03]
+ [9.9998868e-01 3.6589259e-05 3.5557807e-07 9.9997520e-01 3.0924934e-05]
+ [9.9804509e-01 9.9194133e-01 2.3915341e-02 1.1470499e-02 8.0418941e-03]
+ [1.0000000e+00 9.9999714e-01 1.1857182e-02 9.9621481e-01 9.9982977e-01]
+ [9.9950099e-01 9.2569894e-01 3.6307389e-03 1.6874070e-01 4.8126727e-03]
+ [9.6335906e-01 2.1472815e-06 1.1233255e-06 9.8989528e-01 5.9729594e-08]]
+
+
+
+
+
+&lt;matplotlib.legend.Legend at 0x7efec4fddf50&gt;
+</code></pre></div></div>
+
+<p><img src="output_50_2.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s">'3d'</span><span class="p">)</span>
+
+<span class="n">COORD1</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">COORD2</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">COORD3</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'0'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'g'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'1'</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">framealpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;matplotlib.legend.Legend at 0x7efec4ee9b10&gt;
+</code></pre></div></div>
+
+<p><img src="output_51_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s">'3d'</span><span class="p">)</span>
+
+<span class="n">COORD1</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">COORD2</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">COORD3</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'0'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'g'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'1'</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">framealpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;matplotlib.legend.Legend at 0x7efec4e750d0&gt;
+</code></pre></div></div>
+
+<p><img src="output_52_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s">'3d'</span><span class="p">)</span>
+
+<span class="n">COORD1</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">COORD2</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">COORD3</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'0'</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'g'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'1'</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">framealpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;matplotlib.legend.Legend at 0x7efec4dd6ad0&gt;
+</code></pre></div></div>
+
+<p><img src="output_53_1.png" alt="png" /></p>
+
+<p>Draw all the plots</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="k">for</span> <span class="n">comb</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N_hidden_nodes</span><span class="p">),</span> <span class="mi">3</span><span class="p">):</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s">'3d'</span><span class="p">)</span>
+
+    <span class="n">COORD1</span> <span class="o">=</span> <span class="n">comb</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">COORD2</span> <span class="o">=</span> <span class="n">comb</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">COORD3</span> <span class="o">=</span> <span class="n">comb</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">0</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'0'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD1</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD2</span><span class="p">],</span> <span class="n">features_layer1_3d</span><span class="p">[</span><span class="n">target</span><span class="o">==</span><span class="mi">1</span><span class="p">][:,</span><span class="n">COORD3</span><span class="p">],</span> <span class="s">'p'</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span><span class="s">'g'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'1'</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">framealpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">f</span><span class="s">'COORDINATES = {comb}'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="output_55_0.png" alt="png" /></p>
+
+<p><img src="output_55_1.png" alt="png" /></p>
+
+<p><img src="output_55_2.png" alt="png" /></p>
+
+<p><img src="output_55_3.png" alt="png" /></p>
+
+<p><img src="output_55_4.png" alt="png" /></p>
+
+<p><img src="output_55_5.png" alt="png" /></p>
+
+<p><img src="output_55_6.png" alt="png" /></p>
+
+<p><img src="output_55_7.png" alt="png" /></p>
+
+<p><img src="output_55_8.png" alt="png" /></p>
+
+<p><img src="output_55_9.png" alt="png" /></p>
+
+<p><strong>Note</strong>: Generally it is a good idea to use a linear layer for the output layer and use BCEWithLogitsLoss to avoid numerical instabilities.</p>
+
+<p>Clear variables</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">features</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">features_layer1_3d</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">target</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">net</span> <span class="o">=</span> <span class="bp">None</span>
+</code></pre></div></div>
+
+<h3 id="regression">Regression</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">generate_regression_data</span><span class="p">(</span><span class="n">L</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">stepsize</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">L</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span> <span class="o">/</span> <span class="mf">8.</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
+
+<span class="k">def</span> <span class="nf">plot_regression_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">'x'</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'y'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">generate_regression_data</span><span class="p">()</span>
+<span class="n">plot_regression_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><img src="output_61_0.png" alt="png" /></p>
+
+<p>This is a pretty different problem in some ways. We now have one input - x and one output - y. But looked at another way, we simply change the number of inputs in our neural network to 1 and we change the output activation to be a linear function. Why linear? Because in principle, the output (y) can be unbounded i.e. any real value.</p>
+
+<p>We also need to change the loss function. While binary cross-entropy is appropriate for a classification problem, we need something else for a regression problem. We’ll use mean-squared error:</p>
+
+<script type="math/tex; mode=display">\frac{1}{2}(y_{\text{target}} - y_{\text{pred}})^2</script>
+
+<p>Try modifying N_hidden_nodes from 1 through 10 and see what happens to the loss</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N_inputs</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_outputs</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_layers</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_nodes</span> <span class="o">=</span> <span class="mi">10</span> <span class="c">#&lt;--- play with this</span>
+<span class="n">activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
+<span class="n">output_activation</span> <span class="o">=</span> <span class="bp">None</span> <span class="c">#we want one probability between 0-1</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">ClassifierNet</span><span class="p">(</span><span class="n">N_inputs</span><span class="p">,</span>
+                    <span class="n">N_outputs</span><span class="p">,</span>
+                    <span class="n">N_hidden_layers</span><span class="p">,</span>
+                    <span class="n">N_hidden_nodes</span><span class="p">,</span>
+                    <span class="n">activation</span><span class="p">,</span>
+                    <span class="n">output_activation</span><span class="p">)</span>
+
+<span class="n">features</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="nb">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="nb">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">net</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">,</span> <span class="mi">20000</span><span class="p">,</span> <span class="n">criterion</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">())</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>epoch = 0 loss = 1.2707618474960327
+epoch = 1000 loss = 1.0480233430862427
+epoch = 2000 loss = 0.6938183307647705
+epoch = 3000 loss = 0.5630748271942139
+epoch = 4000 loss = 0.49470973014831543
+epoch = 5000 loss = 0.3610362410545349
+epoch = 6000 loss = 0.32711169123649597
+epoch = 7000 loss = 0.3147583603858948
+epoch = 8000 loss = 0.29800817370414734
+epoch = 9000 loss = 0.26048916578292847
+epoch = 10000 loss = 0.2572261393070221
+epoch = 11000 loss = 0.2561047673225403
+epoch = 12000 loss = 0.25528550148010254
+epoch = 13000 loss = 0.2545870840549469
+epoch = 14000 loss = 0.2540249824523926
+epoch = 15000 loss = 0.2534748911857605
+epoch = 16000 loss = 0.25451725721359253
+epoch = 17000 loss = 0.2526385486125946
+epoch = 18000 loss = 0.2522808313369751
+epoch = 19000 loss = 0.25197064876556396
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pred</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">))</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pred</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[&lt;matplotlib.lines.Line2D at 0x7efec4795990&gt;]
+</code></pre></div></div>
+
+<p><img src="output_67_1.png" alt="png" /></p>
+
+<p>As before, we need to understand what the model is doing. As before, let’s consider the mapping from the input node to one node of the hidden layer. In this case, we have the mapping:</p>
+
+<script type="math/tex; mode=display">\sigma(w_i x + b_i)</script>
+
+<p>where $w_i, b_i$ are the weight and bias associated with each node of the hidden layer. This defines a “decision” boundary where:</p>
+
+<script type="math/tex; mode=display">w_i x + b_i = 0</script>
+
+<p>This is just a value $\delta_{i} \equiv -\frac{b_i}{w_i}$.</p>
+
+<p>For each hidden node $i$, we can calculate one such threshold, $\delta_i$.</p>
+
+<p>As we walk along the x-axis from the left to right, we will cross each threshold one by one. On crossing each threshold, one hidden node switches i.e. goes from $0 \rightarrow 1$ or $1 \rightarrow 0$. What effect does this have on the output or prediction?</p>
+
+<p>Since the last layer is linear, its output is:</p>
+
+<p>$y = v_1 h_1 + v_2 h_2 + \ldots + v_n h_n + c$</p>
+
+<p>where $v_i$ are the weights from the hidden layer to the output node, $c$ is the bias on the output node, and $h_i$ are the activations on the hidden nodes. These activations can smoothly vary between 0 and 1 according to the sigmoid function.</p>
+
+<p>So, when we cross a threshold, one of the $h_j$ values eithers turns off or turns on. This has the effect of adding or subtracting constant $v_k$ values from the output if the kth hidden node, $h_k$ is switching on/off.</p>
+
+<p>This means that as we add more hidden nodes, we can divide the domain (the x values) into more fine-grained intervals that can be assigned a single value by the neural network. In practice, there is a smooth interpolation.</p>
+
+<p><strong>Question</strong>: Suppose instead of the sigmoid activations, we used a binary threshold:</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\sigma(x) = \begin{cases}
+1 & x > 0 \\
+0 & x \leq 0
+\end{cases} %]]></script>
+
+<p>then we would get a piece-wise constant prediction from our trained network. Plot that piecewise function as a function of $x$.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">activations</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">layer_list</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">features</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="n">activations</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tensor([[5.9429e-23, 1.0000e+00, 8.9072e-01, 7.3248e-01, 9.1979e-30, 4.7084e-08,
+         5.3011e-04, 1.9220e-03, 1.8465e-18, 1.1419e-12],
+        [9.1254e-23, 1.0000e+00, 8.5847e-01, 7.3213e-01, 1.7939e-29, 7.5984e-08,
+         6.6846e-04, 2.9185e-03, 3.0694e-18, 1.4426e-12],
+        [1.4012e-22, 1.0000e+00, 8.1863e-01, 7.3177e-01, 3.4988e-29, 1.2262e-07,
+         8.4290e-04, 4.4294e-03, 5.1023e-18, 1.8225e-12],
+        [2.1516e-22, 1.0000e+00, 7.7059e-01, 7.3142e-01, 6.8240e-29, 1.9789e-07,
+         1.0628e-03, 6.7172e-03, 8.4816e-18, 2.3023e-12],
+        [3.3038e-22, 1.0000e+00, 7.1425e-01, 7.3107e-01, 1.3309e-28, 3.1935e-07,
+         1.3400e-03, 1.0175e-02, 1.4099e-17, 2.9085e-12],
+        [5.0730e-22, 1.0000e+00, 6.5036e-01, 7.3071e-01, 2.5958e-28, 5.1536e-07,
+         1.6894e-03, 1.5384e-02, 2.3437e-17, 3.6744e-12],
+        [7.7896e-22, 1.0000e+00, 5.8057e-01, 7.3036e-01, 5.0627e-28, 8.3167e-07,
+         2.1297e-03, 2.3198e-02, 3.8959e-17, 4.6419e-12],
+        [1.1961e-21, 1.0000e+00, 5.0740e-01, 7.3000e-01, 9.8742e-28, 1.3421e-06,
+         2.6844e-03, 3.4840e-02, 6.4762e-17, 5.8642e-12],
+        [1.8366e-21, 1.0000e+00, 4.3391e-01, 7.2965e-01, 1.9258e-27, 2.1659e-06,
+         3.3831e-03, 5.2014e-02, 1.0765e-16, 7.4082e-12],
+        [2.8201e-21, 1.0000e+00, 3.6322e-01, 7.2929e-01, 3.7561e-27, 3.4953e-06,
+         4.2629e-03, 7.6978e-02, 1.7895e-16, 9.3589e-12]],
+       grad_fn=&lt;SliceBackward&gt;)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">binary_activations</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Threshold</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)(</span><span class="n">activations</span><span class="p">)</span><span class="o">/</span><span class="n">activations</span>
+<span class="k">print</span><span class="p">(</span><span class="n">binary_activations</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tensor([[0., 1., 1., 1., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 1., 1., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 1., 1., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 1., 1., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 1., 1., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 1., 1., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 1., 1., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 1., 1., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 0., 1., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 0., 1., 0., 0., 0., 0., 0., 0.]], grad_fn=&lt;SliceBackward&gt;)
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">binary_pred</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">output_layer</span><span class="p">(</span><span class="n">binary_activations</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'data'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">binary_pred</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">label</span><span class="o">=</span><span class="s">'binary'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'pred'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;matplotlib.legend.Legend at 0x7efec4733dd0&gt;
+</code></pre></div></div>
+
+<p><img src="output_73_1.png" alt="png" /></p>
+
+<p><strong>Question</strong>: Why does the left part of the function fit so well but the right side is always compromised? Hint: think of the loss function.</p>
+
+<p>The most likely reason is that the loss function is sensitive to the scale of the $y$ values. A 10% deviation between the y-value and the prediction near x = -10 has a larger absolute value than a 10% deviation near say, x = 5.</p>
+
+<p><strong>Question</strong>: Can you think of ways to test this hypothesis?</p>
+
+<p>There are a couple of things you could do. One is to flip the function from left to right and re-train the model. In this case, the right side should start fitting better.</p>
+
+<p>Another option is to change the loss function to percentage error i.e.:</p>
+
+<script type="math/tex; mode=display">\frac{1}{2} \big(\frac{y_{\text{target}} - y_{\text{pred}}}{y_{\text{target}}}\big)^2</script>
+
+<p>but this is probably much harder to optimize.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">y</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">y</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[&lt;matplotlib.lines.Line2D at 0x7efec4689650&gt;]
+</code></pre></div></div>
+
+<p><img src="output_79_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">N_inputs</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_outputs</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_layers</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">N_hidden_nodes</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">activation</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
+<span class="n">output_activation</span> <span class="o">=</span> <span class="bp">None</span> <span class="c">#we want one probability between 0-1</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">ClassifierNet</span><span class="p">(</span><span class="n">N_inputs</span><span class="p">,</span>
+                    <span class="n">N_outputs</span><span class="p">,</span>
+                    <span class="n">N_hidden_layers</span><span class="p">,</span>
+                    <span class="n">N_hidden_nodes</span><span class="p">,</span>
+                    <span class="n">activation</span><span class="p">,</span>
+                    <span class="n">output_activation</span><span class="p">)</span>
+
+<span class="n">features</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="nb">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="nb">float</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">net</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="mf">1e-2</span><span class="p">,</span> <span class="mi">14000</span><span class="p">,</span> <span class="n">criterion</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">())</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>epoch = 0 loss = 1.3706492185592651
+epoch = 1000 loss = 1.2092126607894897
+epoch = 2000 loss = 0.7877468466758728
+epoch = 3000 loss = 0.2116943895816803
+epoch = 4000 loss = 0.0803113803267479
+epoch = 5000 loss = 0.07910894602537155
+epoch = 6000 loss = 0.0786939486861229
+epoch = 7000 loss = 0.0784490555524826
+epoch = 8000 loss = 0.07873161882162094
+epoch = 9000 loss = 0.07814356684684753
+epoch = 10000 loss = 0.07803454995155334
+epoch = 11000 loss = 0.07794118672609329
+epoch = 12000 loss = 0.07786022126674652
+epoch = 13000 loss = 0.07779144495725632
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">pred</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">))</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pred</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[&lt;matplotlib.lines.Line2D at 0x7efec45fc750&gt;]
+</code></pre></div></div>
+
+<p><img src="output_83_1.png" alt="png" /></p>
+
+<p>As expected, now the right side of the function fits well.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">activations</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">layer_list</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">features</span><span class="p">))</span>
+<span class="n">binary_activations</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Threshold</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)(</span><span class="n">activations</span><span class="p">)</span><span class="o">/</span><span class="n">activations</span>
+<span class="n">binary_pred</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">output_layer</span><span class="p">(</span><span class="n">binary_activations</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'data'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">binary_pred</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">label</span><span class="o">=</span><span class="s">'binary'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'r'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">'pred'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;matplotlib.legend.Legend at 0x7efec45c0550&gt;
+</code></pre></div></div>
+
+<p><img src="output_85_1.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+</code></pre></div></div>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">The Happy Mathematician</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>The Happy Mathematician</li>
+          <li><a href="mailto:"></a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/treeinrandomforest"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">treeinrandomforest</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p></p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

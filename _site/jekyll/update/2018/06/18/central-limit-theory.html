@@ -13,6 +13,35 @@
   <link rel="canonical" href="http://treeinrandomforest.github.io/jekyll/update/2018/06/18/central-limit-theory.html">
   <link rel="alternate" type="application/rss+xml" title="The Happy Mathematician" href="http://treeinrandomforest.github.io/feed.xml">
 
+<!--thanks to Davide Cervone-->
+<!--https://groups.google.com/forum/#!msg/mathjax-users/SXjY3rQXOzc/YGcc48HwDR4J-->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Register.StartupHook("TeX Jax Ready",function () {
+    var TEX = MathJax.InputJax.TeX,
+        MML = MathJax.ElementJax.mml;
+    var CheckDimen = function (dimen) {
+      if (dimen === "" ||
+          dimen.match(/^\s*([-+]?(\.\d+|\d+(\.\d*)?))\s*(pt|em|ex|mu|px|mm|cm|in|pc)\s*$/))
+              return dimen.replace(/ /g,"");
+      TEX.Error("Bad dimension for image: "+dimen);
+    };
+    TEX.Definitions.macros.img = "myImage";
+    TEX.Parse.Augment({
+      myImage: function (name) {
+        var src = this.GetArgument(name),
+            valign = CheckDimen(this.GetArgument(name)),
+            width  = CheckDimen(this.GetArgument(name)),
+            height = CheckDimen(this.GetArgument(name));
+        var def = {src:src};
+        if (valign) {def.valign = valign}
+        if (width)  {def.width  = width}
+        if (valign) {def.height = height}
+        this.Push(this.mmlToken(MML.mglyph().With(def)));
+      }
+    });
+  });
+  </script>
+
  <script type="text/x-mathjax-config"> MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "all" } } }); </script>
        <script type="text/x-mathjax-config">
          MathJax.Hub.Config({
@@ -145,11 +174,11 @@ g(\bar{y}; n) & = \mathbb{P}[\bar{Y}=\bar{y}] \\
 
 <p>as well as the central moments:
 <script type="math/tex">% <![CDATA[
-\big<X^n\big>_c = \int dx\, (x-\mu)^n f(x) %]]></script></p>
+\big<X^n\big>\_c = \int dx\, (x-\mu)^n f(x) %]]></script></p>
 
 <p>where <script type="math/tex">% <![CDATA[
 \mu = \big<X\big> %]]></script> is the first moment and assumed to be finite. Note that <script type="math/tex">% <![CDATA[
-\big<X\big>_c = 0 %]]></script>.</p>
+\big<X\big>\_c = 0 %]]></script>.</p>
 
 <p>On the other hand, suppose we are given all the moments. Can we compute <script type="math/tex">f</script> then? The answer to this question is positive as shown below.</p>
 
@@ -192,7 +221,7 @@ g(\bar{y}; n) & = \mathbb{P}[\bar{Y}=\bar{y}] \\
 <script type="math/tex; mode=display">% <![CDATA[
 \begin{split}
 \tilde{g}(k) & = \tilde{g}(0) + \frac{d\tilde{g}(0)}{dk}k + \frac{d^2\tilde{g}(0)}{dk^2}\frac{k^2}{2!} + \ldots + \frac{d^m\tilde{g}(0)}{dk^m}\frac{k^m}{m!} + \ldots \\
-& = \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>_c}{\sqrt{2\pi}} k - \frac{\big<X^2\big>_c}{\sqrt{2\pi}}\frac{k^2}{2!} + \ldots + \frac{(-i)^m\big<X^m\big>_c}{\sqrt{2\pi}}\frac{k^m}{m!} + \ldots
+& = \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>\_c}{\sqrt{2\pi}} k - \frac{\big<X^2\big>\_c}{\sqrt{2\pi}}\frac{k^2}{2!} + \ldots + \frac{(-i)^m\big<X^m\big>\_c}{\sqrt{2\pi}}\frac{k^m}{m!} + \ldots
 \end{split} %]]></script>
 
 <p>using <script type="math/tex">\tilde{g}(0) = \tilde{f}(0) = \frac{1}{\sqrt{2\pi}}</script>.</p>
@@ -200,7 +229,7 @@ g(\bar{y}; n) & = \mathbb{P}[\bar{Y}=\bar{y}] \\
 <p>Finally,</p>
 
 <script type="math/tex; mode=display">% <![CDATA[
-\tilde{f}(k) = e^{-ik\mu} \big( \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>_c}{\sqrt{2\pi}} k - \frac{\big<X^2\big>_c}{\sqrt{2\pi}}\frac{k^2}{2!} + \ldots + \frac{(-i)^m\big<X^m\big>_c}{\sqrt{2\pi}}\frac{k^m}{m!} + \ldots \big) %]]></script>
+\tilde{f}(k) = e^{-ik\mu} \big( \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>\_c}{\sqrt{2\pi}} k - \frac{\big<X^2\big>\_c}{\sqrt{2\pi}}\frac{k^2}{2!} + \ldots + \frac{(-i)^m\big<X^m\big>\_c}{\sqrt{2\pi}}\frac{k^m}{m!} + \ldots \big) %]]></script>
 
 <p>We will use central moments from here on but the same result can be derived by using the non-central moments. We can use this result in equation \ref{master}:</p>
 
@@ -208,31 +237,23 @@ g(\bar{y}; n) & = \mathbb{P}[\bar{Y}=\bar{y}] \\
 \begin{split}
 g(\bar{y}; n) & = \int\frac{dk}{2\pi} \, e^{ik\bar{y}} \big[\int{dy_1\, f(y_1) e^{-iky_1/n}}\big]^n \\
 & = \int\frac{dk}{2\pi} \, e^{ik\bar{y}} \big[\sqrt{2\pi}\tilde{f}(\frac{k}{n})\big]^n\\
-& = \int\frac{dk}{2\pi} \, e^{ik\bar{y}} \big[ e^{-ik\mu/n} \sqrt{2\pi}^n \big( \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>_c}{\sqrt{2\pi}} \frac{k}{n} - \frac{\big<X^2\big>_c}{\sqrt{2\pi}}\frac{1}{2!}(\frac{k}{n})^2 + \ldots + \frac{(-i)^m\big<X^m\big>_c}{\sqrt{2\pi}}\frac{1}{m!}\big(\frac{k}{n}\big)^m + \ldots \big)\big]^n \\
-& = \frac{1}{2\pi}\int dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>_c \frac{k}{n} - \frac{\big<X^2\big>_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>_c}{4!} (\frac{k}{n})^4 \ldots\big)^n
+& = \int\frac{dk}{2\pi} \, e^{ik\bar{y}} \big[ e^{-ik\mu/n} \sqrt{2\pi}^n \big( \frac{1}{\sqrt{2\pi}} - \frac{i\big<X\big>\_c}{\sqrt{2\pi}} \frac{k}{n} - \frac{\big<X^2\big>\_c}{\sqrt{2\pi}}\frac{1}{2!}(\frac{k}{n})^2 + \ldots + \frac{(-i)^m\big<X^m\big>\_c}{\sqrt{2\pi}}\frac{1}{m!}\big(\frac{k}{n}\big)^m + \ldots \big)\big]^n \\
+& = \frac{1}{2\pi}\int dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>\_c \frac{k}{n} - \frac{\big<X^2\big>\_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>\_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>\_c}{4!} (\frac{k}{n})^4 \ldots\big)^n
 \end{split} %]]></script>
 
 <p>More precisely, we want the limit</p>
 
 <script type="math/tex; mode=display">% <![CDATA[
 \begin{split}
-g(\bar{y}; n) & = \lim_{n\rightarrow\infty}\lim_{\Lambda\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>_c \frac{k}{n} - \frac{\big<X^2\big>_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
-& = \lim_{\Lambda\rightarrow\infty}\lim_{n\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>_c \frac{k}{n} - \frac{\big<X^2\big>_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
-& = \lim_{\Lambda\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} \lim_{n\rightarrow\infty} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>_c \frac{k}{n} - \frac{\big<X^2\big>_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
+g(\bar{y}; n) & = \lim_{n\rightarrow\infty}\lim_{\Lambda\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>\_c \frac{k}{n} - \frac{\big<X^2\big>\_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>\_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>\_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
+& = \lim_{\Lambda\rightarrow\infty}\lim_{n\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>\_c \frac{k}{n} - \frac{\big<X^2\big>\_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>\_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>\_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
+& = \lim_{\Lambda\rightarrow\infty}\frac{1}{2\pi}\int_{-\Lambda}^{\Lambda} \lim_{n\rightarrow\infty} dk\, e^{ik(\bar{y}-\mu)} \big(1 - i\big<X\big>\_c \frac{k}{n} - \frac{\big<X^2\big>\_c}{2} (\frac{k}{n})^2 + \frac{i\big<X^3\big>\_c}{3!} (\frac{k}{n})^3 + \frac{\big<X^4\big>\_c}{4!} (\frac{k}{n})^4 \ldots\big)^n \\
 \end{split} %]]></script>
 
-<table>
-  <tbody>
-    <tr>
-      <td>In particular, <script type="math/tex">\frac{k}{n}</script> can be made arbitrarily small this way. For large enough n, $$\frac{</td>
-      <td>k</td>
-      <td>}{n} &lt; \frac{\Lambda}{n} \equiv \epsilon$$.</td>
-    </tr>
-  </tbody>
-</table>
+<p>In particular, <script type="math/tex">\frac{k}{n}</script> can be made arbitrarily small this way. For large enough n, <script type="math/tex">% <![CDATA[
+\frac{\|k\|}{n} < \frac{\Lambda}{n} \equiv \epsilon %]]></script>.</p>
 
-<p>(To be fixed above)
-Note, <script type="math/tex">% <![CDATA[
+<p>Note, <script type="math/tex">% <![CDATA[
 \big<X\big>_c = 0 %]]></script> and defining, <script type="math/tex">% <![CDATA[
 \big<X^2\big>_c \equiv \sigma^2 %]]></script>.
 <script type="math/tex">g(\bar{y}) = \frac{1}{2\pi} \int_{-\infty}^{\infty} dk\, e^{ik(\bar{y}-\mu)}\big[1 - \frac{\sigma^2}{2} (\frac{k}{n})^2+ \mathcal{O}((\frac{k}{n})^3)\big]^n</script></p>
