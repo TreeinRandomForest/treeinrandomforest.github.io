@@ -104,7 +104,7 @@ plot_binary_data(features, target)
 ```
 
 
-![png](output_10_0.png)
+![png](/assets/simplenn/output_10_0.png)
 
 
 We have two features here - x and y. There is a binary target variable that we need to predict. This is essentially the dataset from the logistic regression discussion. Logistic regression will not do well here given that the data is not linearly separable. Transforming the data so we have two features:
@@ -570,7 +570,7 @@ ax.legend(framealpha=0)
 
 
 
-![png](output_40_1.png)
+![png](/assets/simplenn/output_40_1.png)
 
 
 This is the plot we showed in the lecture. For every hidden node in the hidden layer, we have a straight line. The colors of the three lines above are orange, green and blue and that's what we'll call our new coordinates.
@@ -635,7 +635,7 @@ ax.legend(framealpha=0)
 
 
 
-![png](output_44_1.png)
+![png](/assets/simplenn/output_44_1.png)
 
 
 At this stage, a simple linear classifier can draw a linear decision boundary (a plane) to separate the red points from the green points. Also, these points lie in the unit cube (cube with sides of length=1) since we are using sigmoid activations. Whenever the activations get saturated (close to 0 or 1), then we see points on the edges and corners of the cube.
@@ -730,7 +730,7 @@ ax.legend(framealpha=0)
 
 
 
-![png](output_50_2.png)
+![png](/assets/simplenn/output_50_2.png)
 
 
 
@@ -757,7 +757,7 @@ ax.legend(framealpha=0)
 
 
 
-![png](output_51_1.png)
+![png](/assets/simplenn/output_51_1.png)
 
 
 
@@ -784,7 +784,7 @@ ax.legend(framealpha=0)
 
 
 
-![png](output_52_1.png)
+![png](/assets/simplenn/output_52_1.png)
 
 
 
@@ -811,7 +811,7 @@ ax.legend(framealpha=0)
 
 
 
-![png](output_53_1.png)
+![png](/assets/simplenn/output_53_1.png)
 
 
 Draw all the plots
@@ -838,43 +838,43 @@ for comb in itertools.combinations(np.arange(N_hidden_nodes), 3):
 ```
 
 
-![png](output_55_0.png)
+![png](/assets/simplenn/output_55_0.png)
 
 
 
-![png](output_55_1.png)
+![png](/assets/simplenn/output_55_1.png)
 
 
 
-![png](output_55_2.png)
+![png](/assets/simplenn/output_55_2.png)
 
 
 
-![png](output_55_3.png)
+![png](/assets/simplenn/output_55_3.png)
 
 
 
-![png](output_55_4.png)
+![png](/assets/simplenn/output_55_4.png)
 
 
 
-![png](output_55_5.png)
+![png](/assets/simplenn/output_55_5.png)
 
 
 
-![png](output_55_6.png)
+![png](/assets/simplenn/output_55_6.png)
 
 
 
-![png](output_55_7.png)
+![png](/assets/simplenn/output_55_7.png)
 
 
 
-![png](output_55_8.png)
+![png](/assets/simplenn/output_55_8.png)
 
 
 
-![png](output_55_9.png)
+![png](/assets/simplenn/output_55_9.png)
 
 
 **Note**: Generally it is a good idea to use a linear layer for the output layer and use BCEWithLogitsLoss to avoid numerical instabilities.
@@ -914,7 +914,7 @@ plot_regression_data(x, y)
 ```
 
 
-![png](output_61_0.png)
+![png](/assets/simplenn/output_61_0.png)
 
 
 This is a pretty different problem in some ways. We now have one input - x and one output - y. But looked at another way, we simply change the number of inputs in our neural network to 1 and we change the output activation to be a linear function. Why linear? Because in principle, the output (y) can be unbounded i.e. any real value.
@@ -991,7 +991,7 @@ plt.plot(x, pred)
 
 
 
-![png](output_67_1.png)
+![png](/assets/simplenn/output_67_1.png)
 
 
 As before, we need to understand what the model is doing. As before, let's consider the mapping from the input node to one node of the hidden layer. In this case, we have the mapping:
@@ -1096,7 +1096,7 @@ plt.legend()
 
 
 
-![png](output_73_1.png)
+![png](/assets/simplenn/output_73_1.png)
 
 
 **Question**: Why does the left part of the function fit so well but the right side is always compromised? Hint: think of the loss function.
@@ -1131,7 +1131,7 @@ plt.plot(x, y)
 
 
 
-![png](output_79_1.png)
+![png](/assets/simplenn/output_79_1.png)
 
 
 
@@ -1195,7 +1195,7 @@ plt.plot(x, pred)
 
 
 
-![png](output_83_1.png)
+![png](/assets/simplenn/output_83_1.png)
 
 
 As expected, now the right side of the function fits well.
@@ -1221,7 +1221,7 @@ plt.legend()
 
 
 
-![png](output_85_1.png)
+![png](/assets/simplenn/output_85_1.png)
 
 
 
