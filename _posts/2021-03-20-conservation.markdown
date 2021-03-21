@@ -8,28 +8,28 @@ mathjax: true
 
 Incomplete list. In no particular order.
 
-Global Fishing Watch: https://globalfishingwatch.org
+[Global Fishing Watch](https://globalfishingwatch.org)
 
-SkyTruth: https://skytruth.org/
+[SkyTruth](https://skytruth.org/)
 
-ConservationXLabs: https://conservationxlabs.com
+[ConservationXLabs](https://conservationxlabs.com)
 
-Microsoft Research - AI for Earth: https://www.microsoft.com/en-us/ai/ai-for-earth
+[Microsoft Research - AI for Earth](https://www.microsoft.com/en-us/ai/ai-for-earth)
 
 
 Groups that can benefit from data:
 
-International Anti-Poaching Fund: https://www.iapf.org/
+[International Anti-Poaching Fund](https://www.iapf.org/)
 
-Sheldrick Wildlife Trust: https://www.sheldrickwildlifetrust.org/projects/anti-poaching
+[Sheldrick Wildlife Trust](https://www.sheldrickwildlifetrust.org/projects/anti-poaching)
 
-VETPAW: https://vetpaw.org/
+[VETPAW](https://vetpaw.org/)
 
-Sea Shepherd: https://seashepherd.org/
+[Sea Shepherd](https://seashepherd.org/)
 
-EleAid: http://www.eleaid.com/
+[EleAid](http://www.eleaid.com/)
 
-International Fund for Animal Welfare: https://www.ifaw.org/
+[International Fund for Animal Welfare](https://www.ifaw.org/)
 
 
 
