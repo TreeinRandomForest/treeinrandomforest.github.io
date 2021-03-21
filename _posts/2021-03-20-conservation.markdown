@@ -16,6 +16,7 @@ Incomplete list. In no particular order.
 
 [Microsoft Research - AI for Earth](https://www.microsoft.com/en-us/ai/ai-for-earth)
 
+[Skylight](https://vulcan.com/Skylight.aspx)
 
 Groups that can benefit from data:
 
@@ -30,6 +31,10 @@ Groups that can benefit from data:
 [EleAid](http://www.eleaid.com/)
 
 [International Fund for Animal Welfare](https://www.ifaw.org/)
+
+Groups studying animal communication/language:
+
+...
 
 
 
