@@ -8,7 +8,7 @@ mathjax: true
 
 # Domain
 
-See: [config_parser.py](https://github.com/dragonfly/dragonfly/blob/master/dragonfly/parse/config_parser.py#137)
+See: [config_parser.py](https://github.com/dragonfly/dragonfly/blob/master/dragonfly/parse/config_parser.py#L137)
 
 * "float": Needs ("min", "max"). {'type': 'float', 'min': -5.2, 'max': 5.7}
 
