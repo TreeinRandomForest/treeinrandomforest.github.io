@@ -49,398 +49,349 @@ Frequency of reporting progress
 
 All options: grep for "get_option_specs" which is defined [here](https://github.com/dragonfly/dragonfly/blob/master/dragonfly/utils/option_handler.py#L24)
 
-'max_num_steps' : If exceeds this many evaluations, stop.
+ 'acq_opt_max_evals' : Number of evaluations when maximising acquisition. If negative uses default value. 
 
-'capital_type' : Should be one of return_value, cputime, or realtime
+'acq_opt_method' : Which optimiser to use when maximising the acquisition function. 
 
-'mode' : If \'syn\', uses synchronous parallelisation, else asynchronous.
+'acq_probs' : With what probability should we choose each strategy given in acq. If "uniform"  
 
-'build_new_model_every' : Updates the model via a suitable procedure every this many iterations.
+'acq' : Which acquisition to use: ts, ucb, ei, ttei, bucb. If using multiple  
 
-'report_model_on_each_build' : If True, will report the model each time it is built.
+'add_grouping_criterion' : Specify the grouping algorithm, should be one of {randomised_ml} 
 
-'report_results_every' : Report results every this many iterations.
+'add_group_size_criterion' : Specify how to pick the group size, should be one of {max, sampled}. 
 
-'init_capital' : The capital to be used for initialisation.
+'add_max_group_size' : The maximum number of groups in the additive grouping.  
 
-'init_capital_frac' : The fraction of the total capital to be used for initialisation.
+'boca_max_low_fidel_cost_ratio' : If the fidel_cost_ratio is larger than this, just query at fidel_to_opt. 
 
-'num_init_evals' : The number of evaluations for initialisation. If <0, will use default.
+'boca_thresh_coeff_init' : The coefficient to use in determining the threshold for boca. 
 
-'prev_evaluations' : Data for any previous evaluations.
+'boca_thresh_multiplier' : The amount by which to multiply/divide the threshold coeff for boca. 
 
-'get_initial_qinfos' : A function to obtain initial qinfos.
+'boca_thresh_window_length' : The window length to keep checking if the target fidel_to_opt is achieved. 
 
-'init_method' : Method to obtain initial queries. Is used if get_initial_qinfos is None.
+'build_new_model_every' : Updates the model via a suitable procedure every this many iterations. 
 
-'progress_load_from_and_save_to' : Load progress (from possibly a previous run) from and save results to this file. 
+'capital_type' : Should be one of return_value, cputime, or realtime 
 
-'progress_load_from' : Load progress (from possibly a previous run) from this file.
+'choose_mislabel_struct_coeffs' : How to choose the mislabel and struct coefficients. Should be one of  
 
-'progress_save_to' : Save progress to this file.
+'compute_kernel_from_dists' : Should you compute the kernel from pairwise distances whenever possible. 
 
-'progress_save_every' : Save progress to progress_save_to every progress_save_every iterations.
+'dist_type' : The type of distance. This should be lp, emd or lp-emd. 
 
-'progress_report_on_each_save' : If true, will report each time results are saved.
+'domain_add_grouping_criterion' : Specify the grouping algorithm, should be one of {randomised_ml} 
 
-'fidel_init_method' : Method to obtain initial fidels. Is used if get_initial_qinfos is None.
+'domain_add_group_size_criterion' : Specify how to pick the group size, should be one of {max, sampled}. 
 
-'init_set_to_fidel_to_opt_with_prob' : Method to obtain initial fidels. Is used if get_initial_qinfos is None.
+'domain_add_max_group_size' : The maximum number of groups in the additive grouping.  
 
-'dom_euc_kernel_type' : Kernel type for euclidean domains. 
+'domain_esp_kernel_type' : Specify type of kernel. This depends on the application. 
 
-'dom_euc_use_same_bandwidth' : If true, will use same bandwidth on all dimensions. Applies only 
+'domain_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit. 
 
-'dom_euc_matern_nu' : Specify nu value for matern kernel. If negative, will fit.
+'domain_esp_order' : Order of the esp kernel.  
 
-'dom_euc_poly_order' : Order of the polynomial kernle to be used for Euclidean domains. 
+'domain_kernel_type' : Type of kernel for the domain space. Should be se, matern or poly 
 
-'dom_euc_use_additive_gp' : Whether or not to use an additive GP. 
+'domain_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit. 
 
-'dom_euc_add_max_group_size' : The maximum number of groups in the additive grouping. 
+'domain_num_groups_per_group_size' : The number of groups to try per group size. 
 
-'dom_euc_add_grouping_criterion' : Specify the grouping algorithm, should be one of {randomised_ml}
+'domain_poly_order' : Order of the polynomial for domainity kernel. Default = -1 (means will fit) 
 
-'dom_euc_num_groups_per_group_size' : The number of groups to try per group size.
+'domain_use_additive_gp' : Whether or not to use an additive GP.  
 
-'dom_euc_add_group_size_criterion' : Specify how to pick the group size, should be one of {max,sampled}.
+'domain_use_same_bandwidth' : If true, will use same bandwidth on all domain dimensions. Applies only when  
 
-'dom_euc_esp_order' : Order of the esp kernel. 
+'domain_use_same_scalings' : If true, will use same scaling on all domainity dimensions. Applies only when  
 
-'dom_euc_esp_kernel_type' : Specify type of kernel. This depends on the application.
+'dom_disc_hamming_use_same_weight' : If true, use same weight for all dimensions of the hamming kernel. 
 
-'dom_euc_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit.
+'dom_disc_kernel_type' : Kernel type for discrete domains. 
 
-'dom_int_kernel_type' : Kernel type for integral domains. 
+'dom_disc_num_esp_kernel_type' : Specify type of kernel. This depends on the application. 
 
-'dom_int_use_same_bandwidth' : If true, will use same bandwidth on all dimensions. Applies only 
+'dom_disc_num_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit. 
 
-'dom_int_matern_nu' : Specify nu value for matern kernel. If negative, will fit.
+'dom_disc_num_esp_order' : Order of the esp kernel.  
 
-'dom_int_poly_order' : Order of the polynomial kernle to be used for Integral domains. 
+'dom_disc_num_kernel_type' : Kernel type for discrete numeric domains.  
 
-'dom_int_use_additive_gp' : Whether or not to use an additive GP. 
+'dom_disc_num_matern_nu' : Specify nu value for matern kernel. If negative, will fit. 
 
-'dom_int_add_max_group_size' : The maximum number of groups in the additive grouping. 
+'dom_disc_num_poly_order' : Order of the polynomial kernle to be used for Integral domains.  
 
-'dom_int_add_grouping_criterion' : Specify the grouping algorithm, should be one of {randomised_ml}
+'dom_disc_num_use_same_bandwidth' : If true, will use same bandwidth on all dimensions. Applies only  
 
-'dom_int_num_groups_per_group_size' : The number of groups to try per group size.
+'dom_euc_add_grouping_criterion' : Specify the grouping algorithm, should be one of {randomised_ml} 
 
-'dom_int_add_group_size_criterion' : Specify how to pick the group size, should be one of {max,sampled}.
+'dom_euc_add_group_size_criterion' : Specify how to pick the group size, should be one of {max,sampled}. 
 
-'dom_int_esp_order' : Order of the esp kernel. 
+'dom_euc_add_max_group_size' : The maximum number of groups in the additive grouping.  
 
-'dom_int_esp_kernel_type' : Specify type of kernel. This depends on the application.
+'dom_euc_esp_kernel_type' : Specify type of kernel. This depends on the application. 
 
-'dom_int_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit.
+'dom_euc_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit. 
 
-'dom_disc_num_kernel_type' : Kernel type for discrete numeric domains. 
+'dom_euc_esp_order' : Order of the esp kernel.  
 
-'dom_disc_num_use_same_bandwidth' : If true, will use same bandwidth on all dimensions. Applies only 
+'dom_euc_kernel_type' : Kernel type for euclidean domains.  
 
-'dom_disc_num_matern_nu' : Specify nu value for matern kernel. If negative, will fit.
+'dom_euc_matern_nu' : Specify nu value for matern kernel. If negative, will fit. 
 
-'dom_disc_num_poly_order' : Order of the polynomial kernle to be used for Integral domains. 
+'dom_euc_num_groups_per_group_size' : The number of groups to try per group size. 
 
-'dom_disc_num_esp_order' : Order of the esp kernel. 
+'dom_euc_poly_order' : Order of the polynomial kernle to be used for Euclidean domains.  
 
-'dom_disc_num_esp_kernel_type' : Specify type of kernel. This depends on the application.
+'dom_euc_use_additive_gp' : Whether or not to use an additive GP.  
 
-'dom_disc_num_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit.
+'dom_euc_use_same_bandwidth' : If true, will use same bandwidth on all dimensions. Applies only  
 
-'dom_disc_kernel_type' : Kernel type for discrete domains.
+'dom_int_add_grouping_criterion' : Specify the grouping algorithm, should be one of {randomised_ml} 
 
-'dom_disc_hamming_use_same_weight' : If true, use same weight for all dimensions of the hamming kernel.
+'dom_int_add_group_size_criterion' : Specify how to pick the group size, should be one of {max,sampled}. 
 
-'dom_nn_kernel_type' : Kernel type for NN Domains.
+'dom_int_add_max_group_size' : The maximum number of groups in the additive grouping.  
 
-'otmann_dist_type' : The type of distance. Should be lp, emd or lp-emd.
+'dom_int_esp_kernel_type' : Specify type of kernel. This depends on the application. 
 
-'otmann_kernel_type' : The Otmann kernel type. Should be one of lp, emd, lpemd_sum, or lpemd_prod.
+'dom_int_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit. 
 
-'otmann_choose_mislabel_struct_coeffs' : How to choose the mislabel and struct coefficients. Should be one of 
+'dom_int_esp_order' : Order of the esp kernel.  
 
-'otmann_mislabel_coeffs' : The mislabel coefficients specified as a string. If -1, it means we will tune.
+'dom_int_kernel_type' : Kernel type for integral domains.  
 
-'otmann_struct_coeffs' : The struct coefficients specified as a string. If -1, it means we will tune.
+'dom_int_matern_nu' : Specify nu value for matern kernel. If negative, will fit. 
 
-'otmann_lp_power' : The powers to use in the LP distance for the kernel.
+'dom_int_num_groups_per_group_size' : The number of groups to try per group size. 
 
-'otmann_emd_power' : The powers to use in the EMD distance for the kernel.
+'dom_int_poly_order' : Order of the polynomial kernle to be used for Integral domains.  
 
-'otmann_non_assignment_penalty' : The non-assignment penalty for the OTMANN distance.
+'dom_int_use_additive_gp' : Whether or not to use an additive GP.  
 
-'fidel_euc_kernel_type' : Type of kernel for the Euclidean part of the fidelity space. Should be se, 
+'dom_int_use_same_bandwidth' : If true, will use same bandwidth on all dimensions. Applies only  
 
-'fidel_euc_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit.
+'dom_nn_kernel_type' : Kernel type for NN Domains. 
 
-'fidel_euc_use_same_bandwidth' : If true, will use same bandwidth on all Euclidean fidelity dimensions. Applies 
+'emd_power' : The powers to use in the EMD distance for the kernel. 
 
-'fidel_int_kernel_type' : Type of kernel for the fidelity space. Should be se, matern, poly or expdecay
+'en_masse_dec_change_frac' : Default change fraction when decreasing layers en_masse. 
 
-'fidel_int_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit.
+'en_masse_inc_change_frac' : Default change fraction when increasing layers en_masse. 
 
-'fidel_int_use_same_bandwidth' : If true, will use same bandwidth on all integral fidelity dimensions. Applies 
+'esp_kernel_type' : Specify type of kernel. This depends on the application. 
 
-'fidel_disc_num_kernel_type' : Type of kernel for the fidelity space. Should be se, matern, poly or expdecay
+'esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit. 
 
-'fidel_disc_num_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit.
+'esp_order' : Order of the esp kernel.  
 
-'fidel_disc_num_use_same_bandwidth' : If true, will use same bandwidth on all integral fidelity dimensions. Applies 
+'euc_init_method' : Method to obtain initial queries. Is used if get_initial_qinfos is None. 
 
-'fidel_disc_kernel_type' : Kernel type for discrete domains.
+'fidel_disc_hamming_use_same_weight' : If true, use same weight for all dimensions of the hamming kernel. 
 
-'fidel_disc_hamming_use_same_weight' : If true, use same weight for all dimensions of the hamming kernel.
+'fidel_disc_kernel_type' : Kernel type for discrete domains. 
 
-'kernel_type' : Specify type of kernel. This depends on the application.
+'fidel_disc_num_kernel_type' : Type of kernel for the fidelity space. Should be se, matern, poly or expdecay 
 
-'use_same_bandwidth' : If true, will use same bandwidth on all dimensions. Applies only 
+'fidel_disc_num_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit. 
 
-'matern_nu' : Specify the nu value for the matern kernel. If negative, will fit.
+'fidel_disc_num_use_same_bandwidth' : If true, will use same bandwidth on all integral fidelity dimensions. Applies  
 
-'use_same_scalings' : If true uses same scalings on all dimensions. Default is False.
+'fidel_esp_kernel_type' : Specify type of kernel. This depends on the application. 
 
-'poly_order' : Order of the polynomial to be used. Default is 1 (linear kernel).
+'fidel_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit. 
 
-'use_additive_gp' : Whether or not to use an additive GP. 
+'fidel_esp_order' : Order of the esp kernel.  
 
-'add_max_group_size' : The maximum number of groups in the additive grouping. 
+'fidel_euc_kernel_type' : Type of kernel for the Euclidean part of the fidelity space. Should be se,  
 
-'add_grouping_criterion' : Specify the grouping algorithm, should be one of {randomised_ml}
+'fidel_euc_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit. 
 
-'num_groups_per_group_size' : The number of groups to try per group size.
+'fidel_euc_use_same_bandwidth' : If true, will use same bandwidth on all Euclidean fidelity dimensions. Applies  
 
-'add_group_size_criterion' : Specify how to pick the group size, should be one of {max, sampled}.
+'fidel_init_method' : Method to obtain initial fidels. Is used if get_initial_qinfos is None. 
 
-'esp_order' : Order of the esp kernel. 
+'fidel_int_kernel_type' : Type of kernel for the fidelity space. Should be se, matern, poly or expdecay 
 
-'esp_kernel_type' : Specify type of kernel. This depends on the application.
+'fidel_int_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit. 
 
-'esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit.
+'fidel_int_use_same_bandwidth' : If true, will use same bandwidth on all integral fidelity dimensions. Applies  
 
-'fidel_kernel_type' : Type of kernel for the fidelity space. Should be se, matern, poly or expdecay
+'fidel_kernel_type' : Type of kernel for the fidelity space. Should be se, matern, poly or expdecay 
 
-'fidel_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit.
+'fidel_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit. 
 
-'fidel_use_same_bandwidth' : If true, will use same bandwidth on all fidelity dimensions. Applies only when 
+'fidel_poly_order' : Order of the polynomial for fidelity kernel. Default = -1 (means will tune) 
 
-'fidel_use_same_scalings' : If true, will use same scaling on all fidelity dimensions. Applies only when 
+'fidel_use_same_bandwidth' : If true, will use same bandwidth on all fidelity dimensions. Applies only when  
 
-'fidel_poly_order' : Order of the polynomial for fidelity kernel. Default = -1 (means will tune)
+'fidel_use_same_scalings' : If true, will use same scaling on all fidelity dimensions. Applies only when  
 
-'domain_kernel_type' : Type of kernel for the domain space. Should be se, matern or poly
+'fitness_sampler_scaling_const' : The scaling constant for sampling according to exp_probs. 
 
-'domain_matern_nu' : Specify the nu value for the matern kernel. If negative, will fit.
+'get_initial_qinfos' : A function to obtain initial qinfos. 
 
-'domain_use_same_bandwidth' : If true, will use same bandwidth on all domain dimensions. Applies only when 
+'gpb_hp_tune_criterion' : Which criterion to use when tuning hyper-parameters. Other  
 
-'domain_use_same_scalings' : If true, will use same scaling on all domainity dimensions. Applies only when 
+'gpb_hp_tune_probs' : With what probability should we choose each strategy given in hp_tune_criterion. 
 
-'domain_poly_order' : Order of the polynomial for domainity kernel. Default = -1 (means will fit)
+'gpb_ml_hp_tune_opt' : Which optimiser to use when maximising the tuning criterion. 
 
-'domain_use_additive_gp' : Whether or not to use an additive GP. 
+'gpb_post_hp_tune_burn' : How many initial samples to ignore during sampling. 
 
-'domain_add_max_group_size' : The maximum number of groups in the additive grouping. 
+'gpb_post_hp_tune_method' : Which sampling to use when maximising the tuning criterion. Other  
 
-'domain_add_grouping_criterion' : Specify the grouping algorithm, should be one of {randomised_ml}
+'gpb_post_hp_tune_offset' : How many samples to ignore between samples. 
 
-'domain_num_groups_per_group_size' : The number of groups to try per group size.
+'gpb_prior_mean' : The prior mean of the GP for the model. 
 
-'domain_add_group_size_criterion' : Specify how to pick the group size, should be one of {max, sampled}.
+'handle_non_psd_kernels' : How to handle kernels that are non-psd. 
 
-'domain_esp_order' : Order of the esp kernel. 
+'handle_parallel' : How to handle parallelisations. Should be halluc or naive. 
 
-'domain_esp_kernel_type' : Specify type of kernel. This depends on the application.
+'hp_tune_criterion' : Which criterion to use when tuning hyper-parameters. Other  
 
-'domain_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit.
+'hp_tune_max_evals' : How many evaluations to use when maximising the tuning criterion. 
 
-'fidel_esp_order' : Order of the esp kernel. 
+'hp_tune_probs' : With what probability should we choose each strategy given in hp_tune_criterion. 
 
-'fidel_esp_kernel_type' : Specify type of kernel. This depends on the application.
+'init_capital_frac' : The fraction of the total capital to be used for initialisation. 
 
-'fidel_esp_matern_nu' : Specify the nu value for matern kernel. If negative, will fit.
+'init_capital' : The capital to be used for initialisation. 
 
-'hp_tune_criterion' : Which criterion to use when tuning hyper-parameters. Other 
+'init_method' : Method to obtain initial queries. Is used if get_initial_qinfos is None. 
 
-'hp_tune_probs' : With what probability should we choose each strategy given in hp_tune_criterion.
+'init_set_to_fidel_to_opt_with_prob' : Method to obtain initial fidels. Is used if get_initial_qinfos is None. 
 
-'ml_hp_tune_opt' : Which optimiser to use when maximising the tuning criterion.
+'kernel_type' : Specify type of kernel. This depends on the application. 
 
-'hp_tune_max_evals' : How many evaluations to use when maximising the tuning criterion.
+'lp_power' : The powers to use in the LP distance for the kernel. 
 
-'handle_non_psd_kernels' : How to handle kernels that are non-psd.
+'matern_nu' : Specify the nu value for the matern kernel. If negative, will fit. 
 
-'mean_func' : The mean function. If not None, will use this instead of the
+'max_num_steps' : If exceeds this many evaluations, stop. 
 
-'mean_func_type' : Specify the type of mean function. Should be mean, median, const 
+'mean_func_const' : The constant value to use if mean_func_type is const. 
 
-'mean_func_const' : The constant value to use if mean_func_type is const.
+'mean_func' : The mean function. If not None, will use this instead of the 
 
-'noise_var_type' : Specify how to obtain the noise variance. Should be tune, label or value. 
+'mean_func_type' : Specify the type of mean function. Should be mean, median, const  
 
-'noise_var_label' : The fraction of label variance to use as noise variance.
+'mf_strategy' : Which multi-fidelity strategy to use. Should be one of {boca}. 
 
-'noise_var_value' : The (absolute) value to use as noise variance.
+'mislabel_coeffs' : The mislabel coefficients specified as a string. If -1, it means we will tune. 
 
-'post_hp_tune_method' : Which sampling to use when maximising the tuning criterion. Other 
+'ml_hp_tune_opt' : Which optimiser to use when maximising the tuning criterion. 
 
-'post_hp_tune_burn' : How many initial samples to ignore during sampling.
+'mode' : If 'syn', uses synchronous parallelisation, else asynchronous.
 
-'post_hp_tune_offset' : How many samples to ignore between samples.
+'moo_gpb_prior_means' : Prior GP mean functions for Multi-objective GP bandits. 
 
-'dist_type' : The type of distance. This should be lp, emd or lp-emd.
+'moors_reference_point' : Reference point for MOORS. 
 
-'choose_mislabel_struct_coeffs' : How to choose the mislabel and struct coefficients. Should be one of 
+'moors_scalarisation' : Scalarisation for MOORS. Should be "tchebychev" or "linear". 
 
-'compute_kernel_from_dists' : Should you compute the kernel from pairwise distances whenever possible.
+'moors_weight_sampler' : A weight sampler for moors. 
 
-'mislabel_coeffs' : The mislabel coefficients specified as a string. If -1, it means we will tune.
+'moo_strategy' : Get name of multi-objective strategy. So far, Dragonfly only supports moors. 
 
-'struct_coeffs' : The struct coefficients specified as a string. If -1, it means we will tune.
+'next_pt_std_thresh' : If the std of the queried point queries below this times the kernel scale  
 
-'lp_power' : The powers to use in the LP distance for the kernel.
+'nn_report_results_every' : If NN variables are present, report results more frequently 
 
-'emd_power' : The powers to use in the EMD distance for the kernel.
+'noise_var_label' : The fraction of label variance to use as noise variance. 
 
-'non_assignment_penalty' : The non-assignment penalty.
+'noise_var_type' : Specify how to obtain the noise variance. Should be tune, label or value.  
 
-'single_inc_change_frac' : Default change fraction when increasing a single layer.
+'noise_var_value' : The (absolute) value to use as noise variance. 
 
-'single_dec_change_frac' : Default change fraction when decreasing a single layer.
+'non_assignment_penalty' : The non-assignment penalty. 
 
-'en_masse_inc_change_frac' : Default change fraction when increasing layers en_masse.
+'num_candidates_to_mutate_from' : The number of candidates to choose the mutations from. 
 
-'en_masse_dec_change_frac' : Default change fraction when decreasing layers en_masse.
+'num_groups_per_group_size' : The number of groups to try per group size. 
 
-'spawn_single_inc_num_units' : Default number of networks to spawn by increasing # units in a single layer.
+'num_init_evals' : The number of evaluations for initialisation. If <0, will use default. 
 
-'spawn_single_dec_num_units' : Default number of networks to spawn by decreasing # units in a single layer.
+'num_mutations_per_epoch' : Number of mutations per epoch. 
 
-'spawn_add_layer' : Default number of networks to spawn by adding a layer.
+'num_single_step_modifications' :  
 
-'spawn_del_layer' : Default number of networks to spawn by deleting a layer.
+'num_three_step_modifications' :  
 
-'num_single_step_modifications' : 
+'num_two_step_modifications' :  
 
-'num_two_step_modifications' : 
+'otmann_choose_mislabel_struct_coeffs' : How to choose the mislabel and struct coefficients. Should be one of  
 
-'num_three_step_modifications' : 
+'otmann_dist_type' : The type of distance. Should be lp, emd or lp-emd. 
 
-'num_mutations_per_epoch' : Number of mutations per epoch.
+'otmann_emd_power' : The powers to use in the EMD distance for the kernel. 
 
-'num_candidates_to_mutate_from' : The number of candidates to choose the mutations from.
+'otmann_kernel_type' : The Otmann kernel type. Should be one of lp, emd, lpemd_sum, or lpemd_prod. 
 
-'fitness_sampler_scaling_const' : The scaling constant for sampling according to exp_probs.
+'otmann_lp_power' : The powers to use in the LP distance for the kernel. 
 
-'acq' : Which acquisition to use: ts, ucb, ei, ttei, bucb. If using multiple 
+'otmann_mislabel_coeffs' : The mislabel coefficients specified as a string. If -1, it means we will tune. 
 
-'acq_probs' : With what probability should we choose each strategy given in acq. If "uniform" 
+'otmann_non_assignment_penalty' : The non-assignment penalty for the OTMANN distance. 
 
-'acq_opt_method' : Which optimiser to use when maximising the acquisition function.
+'otmann_struct_coeffs' : The struct coefficients specified as a string. If -1, it means we will tune. 
 
-'handle_parallel' : How to handle parallelisations. Should be halluc or naive.
+'perturb_thresh' : If the next point chosen is too close to an exisiting point by this times the  
 
-'acq_opt_max_evals' : Number of evaluations when maximising acquisition. If negative uses default value.
+'poly_order' : Order of the polynomial to be used. Default is 1 (linear kernel). 
 
-'gpb_hp_tune_criterion' : Which criterion to use when tuning hyper-parameters. Other 
+'post_hp_tune_burn' : How many initial samples to ignore during sampling. 
 
-'gpb_hp_tune_probs' : With what probability should we choose each strategy given in hp_tune_criterion.
+'post_hp_tune_method' : Which sampling to use when maximising the tuning criterion. Other  
 
-'gpb_ml_hp_tune_opt' : Which optimiser to use when maximising the tuning criterion.
+'post_hp_tune_offset' : How many samples to ignore between samples. 
 
-'gpb_post_hp_tune_method' : Which sampling to use when maximising the tuning criterion. Other 
+'prev_evaluations' : Data for any previous evaluations. 
 
-'gpb_post_hp_tune_burn' : How many initial samples to ignore during sampling.
+'progress_load_from_and_save_to' : Load progress (from possibly a previous run) from and save results to this file.  
 
-'gpb_post_hp_tune_offset' : How many samples to ignore between samples.
+'progress_load_from' : Load progress (from possibly a previous run) from this file. 
 
-'rand_exp_sampling_replace' : Whether to replace already sampled values or not in rand_exp_sampling.
+'progress_report_on_each_save' : If true, will report each time results are saved. 
 
-'mf_strategy' : Which multi-fidelity strategy to use. Should be one of {boca}.
+'progress_save_every' : Save progress to progress_save_to every progress_save_every iterations. 
 
-'gpb_prior_mean' : The prior mean of the GP for the model.
+'progress_save_to' : Save progress to this file. 
 
-'shrink_kernel_with_time' : If True, shrinks the kernel with time so that we don\
+'rand_exp_sampling_replace' : Whether to replace already sampled values or not in rand_exp_sampling. 
 
-'perturb_thresh' : If the next point chosen is too close to an exisiting point by this times the 
+'report_model_on_each_build' : If True, will report the model each time it is built. 
 
-'track_every_time_step' : If 1, it tracks every time step.
+'report_results_every' : Report results every this many iterations. 
 
-'next_pt_std_thresh' : If the std of the queried point queries below this times the kernel scale 
+'shrink_kernel_with_time' : If True, shrinks the kernel with time so that we don\ 
 
-'nn_report_results_every' : If NN variables are present, report results more frequently
+'single_dec_change_frac' : Default change fraction when decreasing a single layer. 
 
-'target_fidel_to_opt_query_frac_max' : A target to maintain on the number of queries to fidel_to_opt.
+'single_inc_change_frac' : Default change fraction when increasing a single layer. 
 
-'target_fidel_to_opt_query_frac_min' : A target to maintain on the number of queries to fidel_to_opt.
+'spawn_add_layer' : Default number of networks to spawn by adding a layer. 
 
-'boca_thresh_window_length' : The window length to keep checking if the target fidel_to_opt is achieved.
+'spawn_del_layer' : Default number of networks to spawn by deleting a layer. 
 
-'boca_thresh_coeff_init' : The coefficient to use in determining the threshold for boca.
+'spawn_single_dec_num_units' : Default number of networks to spawn by decreasing # units in a single layer. 
 
-'boca_thresh_multiplier' : The amount by which to multiply/divide the threshold coeff for boca.
+'spawn_single_inc_num_units' : Default number of networks to spawn by increasing # units in a single layer. 
 
-'boca_max_low_fidel_cost_ratio' : If the fidel_cost_ratio is larger than this, just query at fidel_to_opt.
+'struct_coeffs' : The struct coefficients specified as a string. If -1, it means we will tune. 
 
-'euc_init_method' : Method to obtain initial queries. Is used if get_initial_qinfos is None.
+'target_fidel_to_opt_query_frac_max' : A target to maintain on the number of queries to fidel_to_opt. 
 
-'moo_strategy' : Get name of multi-objective strategy. So far, Dragonfly only supports moors.
+'target_fidel_to_opt_query_frac_min' : A target to maintain on the number of queries to fidel_to_opt. 
 
-'moors_scalarisation' : Scalarisation for MOORS. Should be "tchebychev" or "linear".
+'track_every_time_step' : If 1, it tracks every time step. 
 
-'moors_weight_sampler' : A weight sampler for moors.
+'use_additive_gp' : Whether or not to use an additive GP.  
 
-'moors_reference_point' : Reference point for MOORS.
+'use_same_bandwidth' : If true, will use same bandwidth on all dimensions. Applies only  
 
-'moo_gpb_prior_means' : Prior GP mean functions for Multi-objective GP bandits.
+'use_same_scalings' : If true uses same scalings on all dimensions. Default is False. 
 
-
-
-
-
-
-
-
-
-
-
---------------------
-
-build_new_model_every: train new GP every N iterations
-
-capital_type: Should be one of return_value, cputime, or realtime
-
-fidel_init_method: Method to obtain initial fidels. Is used if get_initial_qinfos is None.
-
-get_initial_qinfos: A function to obtain initial qinfos.
-
-init_capital: The capital to be used for initialisation.
-
-init_capital_frac: The fraction of the total capital to be used for initialisation.
-
-init_method: Method to obtain initial queries. Is used if get_initial_qinfos is None.
-
-init_set_to_fidel_to_opt_with_prob: 'Method to obtain initial fidels. Is used if get_initial_qinfos is None.
-
-max_num_steps: If exceeds this many evaluations, stop.
-
-mode: If 'syn', uses synchronous parallelisation, else asynchronous.
-
-num_init_evals: The number of evaluations for initialisation. If <0, will use default.
-
-prev_evaluations: Data for any previous evaluations.
-
-progress_load_from: Load progress (from possibly a previous run) from this file.
-
-progress_load_from_and_save_to: Load progress (from possibly a previous run) from and save results to this file. Overrides the progress_save_to and progress_load_from options.
-
-progress_report_on_each_save: If true, will report each time results are saved.
-
-progress_save_every: Save progress to progress_save_to every progress_save_every iterations.
-
-progress_save_to: Save progress to this file.
-
-report_model_on_each_build: If True, will report the model each time it is built.
-
-report_results_every: Report results every this many iterations.
