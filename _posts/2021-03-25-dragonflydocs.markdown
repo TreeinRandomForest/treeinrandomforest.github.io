@@ -49,7 +49,7 @@ Frequency of reporting progress
 
 **All options: grep for "get_option_specs" which is defined [here](https://github.com/dragonfly/dragonfly/blob/master/dragonfly/utils/option_handler.py#L24)**
 
-acq: Which acquisition to use: ts,  ucb,  ei,  ttei,  bucb. If using multiple  
+acq: Which acquisition to use: ts,  ucb,  ei,  ttei,  bucb. If using multiple give them as a hyphen separated list e.g. ucb-ts-ei-ttei 
 
 acq_opt_max_evals: Number of evaluations when maximising acquisition. If negative uses default value. 
 
@@ -57,7 +57,8 @@ acq_opt_method: Which optimiser to use when maximising the acquisition function.
 * options: ['direct', 'pdoo', 'rand', 'default'] [Link](https://github.com/dragonfly/dragonfly/blob/a579b5eadf452e23b07d4caf27b402703b0012b7/dragonfly/opt/gp_bandit.py#L713)
 * Rules for picking opt for specific domain types - [get_default_acq_opt_method_for_domain](https://github.com/dragonfly/dragonfly/blob/a579b5eadf452e23b07d4caf27b402703b0012b7/dragonfly/opt/gp_bandit.py#L154). Used when acq_opt_method=='default'. See [here](https://github.com/dragonfly/dragonfly/blob/a579b5eadf452e23b07d4caf27b402703b0012b7/dragonfly/opt/gp_bandit.py#L279)
 
-acq_probs: With what probability should we choose each strategy given in acq. If "uniform"  
+
+acq_probs: With what probability should we choose each strategy given in acq. If "uniform" we we will use uniform probabilities and if "adaptive" we will use adaptive probabilities which weight acquisitions according to how well they do. 
 * options: ['uniform', 'adaptive']. Can also pass...
 * 'adaptive': See [here](https://github.com/dragonfly/dragonfly/blob/a579b5eadf452e23b07d4caf27b402703b0012b7/dragonfly/opt/gp_bandit.py#L253).
 
@@ -80,7 +81,7 @@ build_new_model_every: Updates the model via a suitable procedure every this man
 
 capital_type: Should be one of return_value,  cputime,  or realtime 
 
-choose_mislabel_struct_coeffs: How to choose the mislabel and struct coefficients. Should be one of  
+choose_mislabel_struct_coeffs: How to choose the mislabel and struct coefficients. Should be one of tune_coeffs or use_given. In the latter case,  mislabel_coeffs and struct_coeffs should be non-empty. 
 
 compute_kernel_from_dists: Should you compute the kernel from pairwise distances whenever possible. 
 
@@ -100,9 +101,9 @@ dom_disc_num_kernel_type: Kernel type for discrete numeric domains.
 
 dom_disc_num_matern_nu: Specify nu value for matern kernel. If negative,  will fit. 
 
-dom_disc_num_poly_order: Order of the polynomial kernle to be used for Integral domains.  
+dom_disc_num_poly_order: Order of the polynomial kernle to be used for Integral domains. Default is 1 (linear kernel). 
 
-dom_disc_num_use_same_bandwidth: If true,  will use same bandwidth on all dimensions. Applies only  
+dom_disc_num_use_same_bandwidth: If true,  will use same bandwidth on all dimensions. Applies only when kernel_type is se or matern. Default=False. 
 
 dom_euc_add_group_size_criterion: Specify how to pick the group size,  should be one of {max, sampled}. 
 
@@ -122,11 +123,11 @@ dom_euc_matern_nu: Specify nu value for matern kernel. If negative,  will fit.
 
 dom_euc_num_groups_per_group_size: The number of groups to try per group size. 
 
-dom_euc_poly_order: Order of the polynomial kernle to be used for Euclidean domains.  
+dom_euc_poly_order: Order of the polynomial kernle to be used for Euclidean domains. Default is 1 (linear kernel). 
 
 dom_euc_use_additive_gp: Whether or not to use an additive GP.  
 
-dom_euc_use_same_bandwidth: If true,  will use same bandwidth on all dimensions. Applies only  
+dom_euc_use_same_bandwidth: If true,  will use same bandwidth on all dimensions. Applies only when kernel_type is se or matern. Default=False. 
 
 dom_int_add_group_size_criterion: Specify how to pick the group size,  should be one of {max, sampled}. 
 
@@ -146,11 +147,11 @@ dom_int_matern_nu: Specify nu value for matern kernel. If negative,  will fit.
 
 dom_int_num_groups_per_group_size: The number of groups to try per group size. 
 
-dom_int_poly_order: Order of the polynomial kernle to be used for Integral domains.  
+dom_int_poly_order: Order of the polynomial kernle to be used for Integral domains. Default is 1 (linear kernel). 
 
 dom_int_use_additive_gp: Whether or not to use an additive GP.  
 
-dom_int_use_same_bandwidth: If true,  will use same bandwidth on all dimensions. Applies only  
+dom_int_use_same_bandwidth: If true,  will use same bandwidth on all dimensions. Applies only when kernel_type is se or matern. Default=False. 
 
 dom_nn_kernel_type: Kernel type for NN Domains. 
 
@@ -176,9 +177,9 @@ domain_poly_order: Order of the polynomial for domainity kernel. Default = -1 (m
 
 domain_use_additive_gp: Whether or not to use an additive GP.  
 
-domain_use_same_bandwidth: If true,  will use same bandwidth on all domain dimensions. Applies only when  
+domain_use_same_bandwidth: If true,  will use same bandwidth on all domain dimensions. Applies only when domain_kernel_type is se or matern. Default=False. 
 
-domain_use_same_scalings: If true,  will use same scaling on all domainity dimensions. Applies only when  
+domain_use_same_scalings: If true,  will use same scaling on all domainity dimensions. Applies only when domain_kernel_type is poly. Default=False. 
 
 emd_power: The powers to use in the EMD distance for the kernel. 
 
@@ -202,7 +203,7 @@ fidel_disc_num_kernel_type: Type of kernel for the fidelity space. Should be se,
 
 fidel_disc_num_matern_nu: Specify the nu value for the matern kernel. If negative,  will fit. 
 
-fidel_disc_num_use_same_bandwidth: If true,  will use same bandwidth on all integral fidelity dimensions. Applies  
+fidel_disc_num_use_same_bandwidth: If true,  will use same bandwidth on all integral fidelity dimensions. Applies only when fidel_kernel_type is se or matern. Default=False. 
 
 fidel_esp_kernel_type: Specify type of kernel. This depends on the application. 
 
@@ -210,11 +211,11 @@ fidel_esp_matern_nu: Specify the nu value for matern kernel. If negative,  will 
 
 fidel_esp_order: Order of the esp kernel.  
 
-fidel_euc_kernel_type: Type of kernel for the Euclidean part of the fidelity space. Should be se,   
+fidel_euc_kernel_type: Type of kernel for the Euclidean part of the fidelity space. Should be se,  matern,  poly or expdecay 
 
 fidel_euc_matern_nu: Specify the nu value for the matern kernel. If negative,  will fit. 
 
-fidel_euc_use_same_bandwidth: If true,  will use same bandwidth on all Euclidean fidelity dimensions. Applies  
+fidel_euc_use_same_bandwidth: If true,  will use same bandwidth on all Euclidean fidelity dimensions. Applies only when fidel_kernel_type is se or matern. Default=False. 
 
 fidel_init_method: Method to obtain initial fidels. Is used if get_initial_qinfos is None. 
 
@@ -222,7 +223,7 @@ fidel_int_kernel_type: Type of kernel for the fidelity space. Should be se,  mat
 
 fidel_int_matern_nu: Specify the nu value for the matern kernel. If negative,  will fit. 
 
-fidel_int_use_same_bandwidth: If true,  will use same bandwidth on all integral fidelity dimensions. Applies  
+fidel_int_use_same_bandwidth: If true,  will use same bandwidth on all integral fidelity dimensions. Applies only when fidel_kernel_type is se or matern. Default=False. 
 
 fidel_kernel_type: Type of kernel for the fidelity space. Should be se,  matern,  poly or expdecay 
 
@@ -230,23 +231,23 @@ fidel_matern_nu: Specify the nu value for the matern kernel. If negative,  will 
 
 fidel_poly_order: Order of the polynomial for fidelity kernel. Default = -1 (means will tune) 
 
-fidel_use_same_bandwidth: If true,  will use same bandwidth on all fidelity dimensions. Applies only when  
+fidel_use_same_bandwidth: If true,  will use same bandwidth on all fidelity dimensions. Applies only when fidel_kernel_type is se or matern. Default=False. 
 
-fidel_use_same_scalings: If true,  will use same scaling on all fidelity dimensions. Applies only when  
+fidel_use_same_scalings: If true,  will use same scaling on all fidelity dimensions. Applies only when fidel_kernel_type is poly. Default=False. 
 
 fitness_sampler_scaling_const: The scaling constant for sampling according to exp_probs. 
 
 get_initial_qinfos: A function to obtain initial qinfos. 
 
-gpb_hp_tune_criterion: Which criterion to use when tuning hyper-parameters. Other  
+gpb_hp_tune_criterion: Which criterion to use when tuning hyper-parameters. Other options are post_sampling and post_mean. 
 
-gpb_hp_tune_probs: With what probability should we choose each strategy given in hp_tune_criterion. 
+gpb_hp_tune_probs: With what probability should we choose each strategy given in hp_tune_criterion.If "uniform" we we will use uniform probabilities and if "adaptive" we will use adaptive probabilities which weight acquisitions according to how well they do. 
 
 gpb_ml_hp_tune_opt: Which optimiser to use when maximising the tuning criterion. 
 
 gpb_post_hp_tune_burn: How many initial samples to ignore during sampling. 
 
-gpb_post_hp_tune_method: Which sampling to use when maximising the tuning criterion. Other  
+gpb_post_hp_tune_method: Which sampling to use when maximising the tuning criterion. Other option is nuts 
 
 gpb_post_hp_tune_offset: How many samples to ignore between samples. 
 
@@ -256,11 +257,11 @@ handle_non_psd_kernels: How to handle kernels that are non-psd.
 
 handle_parallel: How to handle parallelisations. Should be halluc or naive. 
 
-hp_tune_criterion: Which criterion to use when tuning hyper-parameters. Other  
+hp_tune_criterion: Which criterion to use when tuning hyper-parameters. Other options are post_sampling and post_mean. 
 
 hp_tune_max_evals: How many evaluations to use when maximising the tuning criterion. 
 
-hp_tune_probs: With what probability should we choose each strategy given in hp_tune_criterion. 
+hp_tune_probs: With what probability should we choose each strategy given in hp_tune_criterion.If "uniform" we we will use uniform probabilities and if "adaptive" we will use adaptive probabilities which weight acquisitions according to how well they do. 
 
 init_capital: The capital to be used for initialisation. 
 
@@ -278,11 +279,11 @@ matern_nu: Specify the nu value for the matern kernel. If negative,  will fit.
 
 max_num_steps: If exceeds this many evaluations,  stop. 
 
-mean_func: The mean function. If not None,  will use this instead of the 
+mean_func: The mean function. If not None,  will use this instead of theother options below 
 
 mean_func_const: The constant value to use if mean_func_type is const. 
 
-mean_func_type: Specify the type of mean function. Should be mean,  median,  const  
+mean_func_type: Specify the type of mean function. Should be mean,  median,  const zero,  or tune. If const,  specifcy value in mean-func-const. 
 
 mf_strategy: Which multi-fidelity strategy to use. Should be one of {boca}. 
 
@@ -290,7 +291,7 @@ mislabel_coeffs: The mislabel coefficients specified as a string. If -1,  it mea
 
 ml_hp_tune_opt: Which optimiser to use when maximising the tuning criterion. 
 
-mode: If \ 
+mode: If \,  uses synchronous parallelisation,  else asynchronous. 
 
 moo_gpb_prior_means: Prior GP mean functions for Multi-objective GP bandits. 
 
@@ -302,13 +303,13 @@ moors_scalarisation: Scalarisation for MOORS. Should be "tchebychev" or "linear"
 
 moors_weight_sampler: A weight sampler for moors. 
 
-next_pt_std_thresh: If the std of the queried point queries below this times the kernel scale  
+next_pt_std_thresh: If the std of the queried point queries below this times the kernel scale frequently we will reduce the bandwidth range 
 
 nn_report_results_every: If NN variables are present,  report results more frequently 
 
 noise_var_label: The fraction of label variance to use as noise variance. 
 
-noise_var_type: Specify how to obtain the noise variance. Should be tune,  label or value.  
+noise_var_type: Specify how to obtain the noise variance. Should be tune,  label or value. Specify appropriate value in noise_var_label or noise_var_value 
 
 noise_var_value: The (absolute) value to use as noise variance. 
 
@@ -328,7 +329,7 @@ num_three_step_modifications: Default number of networks to spawn via three step
 
 num_two_step_modifications: Default number of networks to spawn via two step primitives. 
 
-otmann_choose_mislabel_struct_coeffs: How to choose the mislabel and struct coefficients. Should be one of  
+otmann_choose_mislabel_struct_coeffs: How to choose the mislabel and struct coefficients. Should be one of tune_coeffs or use_given. In the latter case,  otmann_mislabel_coeffs and otmann_struct_coeffs should be non-empty. 
 
 otmann_dist_type: The type of distance. Should be lp,  emd or lp-emd. 
 
@@ -344,13 +345,13 @@ otmann_non_assignment_penalty: The non-assignment penalty for the OTMANN distanc
 
 otmann_struct_coeffs: The struct coefficients specified as a string. If -1,  it means we will tune. 
 
-perturb_thresh: If the next point chosen is too close to an exisiting point by this times the  
+perturb_thresh: If the next point chosen is too close to an exisiting point by this times the diameter,  then we will perturb the point a little bit before querying. This is mainly to avoid numerical stability issues. 
 
 poly_order: Order of the polynomial to be used. Default is 1 (linear kernel). 
 
 post_hp_tune_burn: How many initial samples to ignore during sampling. 
 
-post_hp_tune_method: Which sampling to use when maximising the tuning criterion. Other  
+post_hp_tune_method: Which sampling to use when maximising the tuning criterion. Other option is nuts. 
 
 post_hp_tune_offset: How many samples to ignore between samples. 
 
@@ -358,7 +359,7 @@ prev_evaluations: Data for any previous evaluations.
 
 progress_load_from: Load progress (from possibly a previous run) from this file. 
 
-progress_load_from_and_save_to: Load progress (from possibly a previous run) from and save results to this file.  
+progress_load_from_and_save_to: Load progress (from possibly a previous run) from and save results to this file. Overrides the progress_save_to and progress_load_from options. 
 
 progress_report_on_each_save: If true,  will report each time results are saved. 
 
@@ -372,7 +373,7 @@ report_model_on_each_build: If True,  will report the model each time it is buil
 
 report_results_every: Report results every this many iterations. 
 
-shrink_kernel_with_time: If True,  shrinks the kernel with time so that we don\ 
+shrink_kernel_with_time: If True,  shrinks the kernel with time so that we don\),  
 
 single_dec_change_frac: Default change fraction when decreasing a single layer. 
 
@@ -396,7 +397,7 @@ track_every_time_step: If 1,  it tracks every time step.
 
 use_additive_gp: Whether or not to use an additive GP.  
 
-use_same_bandwidth: If true,  will use same bandwidth on all dimensions. Applies only  
+use_same_bandwidth: If true,  will use same bandwidth on all dimensions. Applies only when kernel_type is se or matern. Default=False. 
 
 use_same_scalings: If true uses same scalings on all dimensions. Default is False. 
 
