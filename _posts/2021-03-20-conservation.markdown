@@ -18,6 +18,7 @@ Incomplete list. In no particular order.
 
 [Skylight](https://vulcan.com/Skylight.aspx)
 
+
 Groups that can benefit from data:
 
 [International Anti-Poaching Fund](https://www.iapf.org/)
@@ -37,6 +38,7 @@ Groups studying animal communication/language:
 ...
 
 
+Passionate people:
 
-
+[The Travelling Cheetah](https://thetravellingcheetah.com/)
 
