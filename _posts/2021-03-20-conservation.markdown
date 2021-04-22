@@ -38,6 +38,8 @@ Groups studying animal communication/language:
 [Are we smart enough?](https://www.amazon.com/Are-Smart-Enough-Know-Animals/dp/0393353664)
 
 [Whale communication](https://www.nationalgeographic.co.uk/animals/2021/04/groundbreaking-effort-launched-to-decode-whale-language)
+
+[Project CETI](https://www.projectceti.org/)
 ...
 
 
