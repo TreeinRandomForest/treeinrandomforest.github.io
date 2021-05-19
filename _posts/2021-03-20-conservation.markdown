@@ -18,8 +18,9 @@ Incomplete list. In no particular order.
 
 [Skylight](https://vulcan.com/Skylight.aspx)
 
-
 Groups that can benefit from data:
+
+[Bumi Hills Foundation](https://www.bumihillsfoundation.org/)
 
 [International Anti-Poaching Fund](https://www.iapf.org/)
 
