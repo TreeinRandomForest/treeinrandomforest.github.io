@@ -37,6 +37,9 @@ Groups studying animal communication/language:
 
 [Are we smart enough?](https://www.amazon.com/Are-Smart-Enough-Know-Animals/dp/0393353664)
 
+[Laughter in Other Species](https://www.tandfonline.com/doi/full/10.1080/09524622.2021.1905065#.YH-V2OCJSJo.twitter)
+[Also see: ](https://arstechnica.com/science/2021/05/from-apes-to-birds-there-are-65-animal-species-that-laugh)
+
 [Whale communication](https://www.nationalgeographic.co.uk/animals/2021/04/groundbreaking-effort-launched-to-decode-whale-language)
 
 [Project CETI](https://www.projectceti.org/)
