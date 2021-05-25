@@ -24,6 +24,8 @@ Groups that can benefit from data:
 
 [International Anti-Poaching Fund](https://www.iapf.org/)
 
+[Bloom Anti-Deep Sea Trawling](https://www.bloomassociation.org/en/)
+
 [Sheldrick Wildlife Trust](https://www.sheldrickwildlifetrust.org/projects/anti-poaching)
 
 [VETPAW](https://vetpaw.org/)
