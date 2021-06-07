@@ -46,10 +46,19 @@ Groups studying animal communication/language:
 [Whale communication](https://www.nationalgeographic.co.uk/animals/2021/04/groundbreaking-effort-launched-to-decode-whale-language)
 
 [Project CETI](https://www.projectceti.org/)
+
+[Elephant Ethogram](https://www.elephantvoices.org/elephant-ethogram.html)
+
+[Earth Species Project](https://github.com/earthspecies)
 ...
 
 
 Passionate people:
 
 [The Travelling Cheetah](https://thetravellingcheetah.com/)
+
+Criminal behavior:
+
+Shipping Armadas](https://usa.oceana.org/publications/reports/oceana-finds-hundreds-vessels-vanishing-along-argentinas-waters#)
+
 
