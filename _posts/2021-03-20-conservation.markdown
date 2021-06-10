@@ -59,6 +59,9 @@ Passionate people:
 
 Criminal behavior:
 
-Shipping Armadas](https://usa.oceana.org/publications/reports/oceana-finds-hundreds-vessels-vanishing-along-argentinas-waters#)
+[Shipping Armadas](https://usa.oceana.org/publications/reports/oceana-finds-hundreds-vessels-vanishing-along-argentinas-waters#)
 
+[Mysore Profile](https://pbs.jhu.edu/directory/shreesh-mysore/)
+[Mysore](https://www.jhunewsletter.com/article/2021/05/peta-claims-hopkins-barn-owl-lab-violated-state-law-by-operating-without-a-permit)
+[Mysore Lab Members](https://mysorelab.johnshopkins.edu/team.html)
 
