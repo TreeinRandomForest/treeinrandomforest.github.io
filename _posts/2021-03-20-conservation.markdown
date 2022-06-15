@@ -41,6 +41,8 @@ Groups that can benefit from data:
 
 Groups studying animal communication/language:
 
+[Joshua Plotnick](https://www.hunter.cuny.edu/psychology/people/faculty/physiological/plotnik)
+
 [Are we smart enough?](https://www.amazon.com/Are-Smart-Enough-Know-Animals/dp/0393353664)
 
 [Laughter in Other Species](https://www.tandfonline.com/doi/full/10.1080/09524622.2021.1905065#.YH-V2OCJSJo.twitter)
