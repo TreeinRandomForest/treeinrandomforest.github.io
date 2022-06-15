@@ -8,6 +8,9 @@ mathjax: true
 
 Incomplete list. In no particular order.
 
+[Maisha Group](https://www.maisha-group.com/)
+Also see: [Smithsonian Magazine Article](https://www.smithsonianmag.com/science-nature/fight-against-elephant-poaching-going-commando-180959071/)
+
 [Global Fishing Watch](https://globalfishingwatch.org)
 
 [SkyTruth](https://skytruth.org/)
