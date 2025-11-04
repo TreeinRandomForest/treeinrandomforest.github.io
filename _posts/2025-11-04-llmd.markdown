@@ -26,14 +26,19 @@ Large models like Deepseek-R1 don't fit in GPU memories. Even with FP8 (1-byte f
 
 Expert parallelism is a form of sharding where E experts in each layer are stored across GPUs (generally across multiple nodes). This imposes an additional cost of sending activations from the source (i.e. the GPU receiving the request and doing the computation) to the GPU(s) holding the experts triggered by the request at each of the layers and the cost of receiving the output activations from the experts back to the source GPU.
 
-Let's consider three cases. We will consider prefill for a request with $N_t$ tokens:
+Let's consider three cases. We will consider prefill for a request with $N_t$ tokens.
 
-1. Baseline (B): Suppose we had a mythical GPU with enough memory to hold the full model, large KV caches as well as multiple requests. Suppose the time to do prefill is $T_B$.
+#### Baseline (B)
 
-2. PCIe offload (P): Since we can't keep all the experts in GPU memory, let's consider keeping the expert parameters in host memory accessible over PCIe links. Suppose the bandwidth of the links is $B_{\text{pcie}}$. Also, assume that all experts are on the host i.e. the worst-case scenario where a request cannot use a previously resident expert on the GPU.
+Suppose we had a mythical GPU with enough memory to hold the full model, large KV caches as well as multiple requests. Suppose the time to do prefill is $T_B$. In this simplified model, this is the time required to execute all the required floating point operations for the forward pass (or lookups from the KV cache).
 
-Since the actual computation is the same as case 1, we can write the total time as:
-$T_P = T_B + \frac{LS_{E}kf_{E}}{B_{\text{pcie}}$
+#### PCIe offload (P)
+
+Since we can't keep all the experts in GPU memory, let's consider keeping the expert parameters in host memory accessible over PCIe links. Suppose the bandwidth of the links is $B_{\text{pcie}}$. Also, assume that all experts are on the host i.e. the worst-case scenario where a request cannot use a previously resident expert on the GPU.
+
+Since the actual computation is the same as case 1, we can write the total time as the total compute time ($T_B$) plus the overhead of transferring experts to the GPU's memory. The payload being transferred is the number of required experts across all layers.
+
+$$T_{P} = T_{B} + \frac{L S_{E} f_{E} N_{ue}}{B_{pcie}}$$
 
 In reality, there is an additional latency in the overhead (second-term above) but let's ignore that for now. Here,
 
@@ -43,18 +48,68 @@ $S_{E}$ = size of experts (number of parameters)
 
 $f_{E}$ = size in bytes of parameter float type
 
-k = number of experts required by query (at each layer)
+$N_{ue}$ = number of experts used (ue=used experts) across $N_t$ tokens
 
-3. Expert Parallelism (EP): Suppose, at each layer, all the required experts are on other nodes. This is the worst-case scenario. Let's also assume that we will send the activations to the relevant node and receive the outputs from the experts back to the source node. Now, the total time would be:
+In principle, if each token uses different experts at a given layer, then $N_{ue} = k N_t$ where k is model specific. At the same time, $N_{ue}$ cannot exceed the total number of experts $N_{experts}^{total}$. In other words,
 
-$$T_{EP} = T + 2 \frac{L d f_{A}}{B_{\text{net}}$$
+$$N_{ue} = \min(k N_t, N_{experts}^{total})$$
+
+To summarize:
+
+$$T_{P} = T_{B} + \frac{L S_{E} f_{E} \min(k N_t, N_{experts}^{total})}{B_{pcie}}$$
+
+Note that this estimate also applies to experts stored in persistent storage as long as one uses the correct bandwidth.
+
+#### Expert Parallelism (EP)
+
+Suppose, at each layer, all the required experts are on other nodes. This is the worst-case scenario where no required experts are locally resident. Let's also assume that we will send the activations to the relevant node and receive the outputs from the experts back to the source node. In practice, thisis implemented through sparse all-to-all collective calls. 
+
+Now, the total time would be:
+
+$$T_{EP} = T_B + 2 \frac{L N_t d f_{a}}{B_{net}}$$
 
 where 
 
 $d$ = number of activations
 
-$f_{A}$ = size in bytes of activation float type
+$f_{a}$ = size in bytes of activation float type
 
-$B_{\text{net}}$ = network bandwidth (bytes/sec)
+$B_{net}$ = network bandwidth (bytes/sec)
 
+i.e for each layer and for each token, we have $d$ activations being dispatched for forward propagation on a remote node and $d$ output activations being collected back at the source node. The factor for 2 is to account for dispatch and combine, assuming the experts have the same dimensionality for their input and output vectors.
+
+#### Tipping Point
+
+Typically, the baseline option is not physically possible for large models. Instead, let's find cases where one must choose either PCIe offloading or expert parallelism.
+
+Let's consider the case where PCIe offload is preferred. In this case, we require:
+
+$$T_P \lt T_{EP}$$
+
+$$\implies \frac{L S_{E} f_{E} N_{ue}}{B_{pcie}} < 2 \frac{L N_t d f_{a}}{B_{net}}$$
+
+$$\implies\frac{1}{2} \frac{S_E f_E}{d f_a} \frac{B_{net}}{B_{pcie}} \frac{N_{ue}}{N_t}\lt 1$$
+
+We have grouped together terms that are model dependent, hardware/systems software dependent and query dependent:
+
+$$\boxed{\frac{1}{2} \underbrace{\frac{S_E f_E}{f_a d}}_{\text{model}} \underbrace{\frac{B_{net}}{B_{pcie}}}_{\text{system}} \underbrace{\frac{N_{ue}}{N_t}}_{query}\lt 1}$$
+
+In this idealized calculation, if the term on the left-hand side
+
+$$\boxed{\gamma \equiv \frac{1}{2} \frac{S_E f_E}{d f_a} \frac{B_{net}}{B_{pcie}} \frac{N_{ue}}{N_t}}$$
+
+decides whether one should prefer offloading the experts to the local host ($\gamma \lt 1$) or to use expert parallelism with remote nodes ($\gamma \gt 1$).
+
+#### Disclaimers
+
+All quantities are random variables. We ignored their distributions and treated them as determinstic quantities. 
+
+All bandwidth calculations (payload / bandwidth) generally have an associated latency (latency + payload / bandwidth). We ignored these latencies although they are straightforward to account for.
+
+For decoding, replace $N_t$ by $N_{OS}$ i.e. the output sequence length to compute the impact on total time (TTFT + ITL).
+
+#### Simple Example
+
+
+TODO Let's compute $\gamma$ for an example model e.g. Deepseek-R1. R1 has 256 routed experts per layer i.e. 
 
