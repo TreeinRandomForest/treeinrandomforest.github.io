@@ -1,0 +1,60 @@
+---
+layout: post
+title:  "Back-of-the-envelope comparison of expert parallelism in llm-d"
+date:   2025-11-04
+categories: jekyll update
+mathjax: true
+---
+
+The three optimizations llm-d implements for large-scale distributed inference are:
+
+1. Prefill caching: Each node/worker/gpu
+2. Prefill/decode disaggregation (PD)
+3. Expert Parallelism (EP) for mixture-of-expert (MoE) models
+
+Let's focus on expert parallelism. This entails assigning experts to different GPUs (possibly across different nodes) and routing activations from the source GPU to the relevant GPU hosting the expert and routing the output of the expert back to the original GPU.
+
+This is done using all-to-all collectives which can be sparse i.e. one can send non-uniform amounts of data to various expert-holding GPUs.
+
+The goal here is to do a simple calculation comparing two expert offloading strategies. Disclaimer: I am ignoring many complexities and the results need to be validated and adjusted through experimentation.
+
+MoE models are transformers consisting of $L$ layers, each consisting of alternating self-attention (SA) and MoE layers (ignoring normalization layers and residual connections). An MoE layer replaces a full dense multi-layer perceptron (MLP). In particular, an MoE layer consists of (a) a gating mechanism to compute probabilities for triggering N experts, (b) a hyperparameter k which specifies how many of the top k experts to choose, (c) the experts, which are smaller MLPs.
+
+Backprop is done just through the chosen experts for a given input request. Each request can dynamically "choose" which experts to trigger in each transformer layer. This reduces the effective number of parameters triggered for a given query. For example, Deepseek-R1 has ~700B parameters but effectively uses ~37B parameters for a given query. Of course, this also comes at a cost during training - each expert sees a fraction of the actual batch size (in tokens).
+
+Large models like Deepseek-R1 don't fit in GPU memories. Even with FP8 (1-byte floats) for the parameters, R1 would have a model footprint of ~700GB while an H100 GPU has 80GB. For inference, a large part of the memory is dedicated to the KV-cache which forces sharding the model.
+
+Expert parallelism is a form of sharding where E experts in each layer are stored across GPUs (generally across multiple nodes). This imposes an additional cost of sending activations from the source (i.e. the GPU receiving the request and doing the computation) to the GPU(s) holding the experts triggered by the request at each of the layers and the cost of receiving the output activations from the experts back to the source GPU.
+
+Let's consider three cases. We will consider prefill for a request with $N_t$ tokens:
+
+1. Baseline (B): Suppose we had a mythical GPU with enough memory to hold the full model, large KV caches as well as multiple requests. Suppose the time to do prefill is $T_B$.
+
+2. PCIe offload (P): Since we can't keep all the experts in GPU memory, let's consider keeping the expert parameters in host memory accessible over PCIe links. Suppose the bandwidth of the links is $B_{\text{pcie}}$. Also, assume that all experts are on the host i.e. the worst-case scenario where a request cannot use a previously resident expert on the GPU.
+
+Since the actual computation is the same as case 1, we can write the total time as:
+$$T_P = T_B + \frac{LS_{E}kf_{E}}{B_{\text{pcie}}$$
+
+In reality, there is an additional latency in the overhead (second-term above) but let's ignore that for now. Here,
+
+$L$ = number of layers
+
+$S_{E}$ = size of experts (number of parameters)
+
+$f_{E}$ = size in bytes of parameter float type
+
+k = number of experts required by query (at each layer)
+
+3. Expert Parallelism (EP): Suppose, at each layer, all the required experts are on other nodes. This is the worst-case scenario. Let's also assume that we will send the activations to the relevant node and receive the outputs from the experts back to the source node. Now, the total time would be:
+
+$$T_{EP} = T + 2 \frac{L d f_{A}}{B_{\text{net}}$$
+
+where 
+
+$d$ = number of activations
+
+$f_{A}$ = size in bytes of activation float type
+
+$B_{\text{net}}$ = network bandwidth (bytes/sec)
+
+
