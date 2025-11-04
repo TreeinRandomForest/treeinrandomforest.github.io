@@ -33,7 +33,7 @@ Let's consider three cases. We will consider prefill for a request with $N_t$ to
 2. PCIe offload (P): Since we can't keep all the experts in GPU memory, let's consider keeping the expert parameters in host memory accessible over PCIe links. Suppose the bandwidth of the links is $B_{\text{pcie}}$. Also, assume that all experts are on the host i.e. the worst-case scenario where a request cannot use a previously resident expert on the GPU.
 
 Since the actual computation is the same as case 1, we can write the total time as:
-$$T_P = T_B + \frac{LS_{E}kf_{E}}{B_{\text{pcie}}$$
+$T_P = T_B + \frac{LS_{E}kf_{E}}{B_{\text{pcie}}$
 
 In reality, there is an additional latency in the overhead (second-term above) but let's ignore that for now. Here,
 
